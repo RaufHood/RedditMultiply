@@ -6,21 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
-import { Progress } from "@/components/ui/progress"
-import {
-  Plus,
-  X,
-  MessageSquare,
-  ThumbsUp,
-  AlertCircle,
-  CheckCircle,
-  Eye,
-  Copy,
-  RefreshCw,
-  BarChart3,
-} from "lucide-react"
+import { Plus, X, MessageSquare, ThumbsUp, AlertCircle, CheckCircle, Eye, BarChart3 } from "lucide-react"
+import { Navigation } from "@/components/navigation"
 
 interface Mention {
   id: string
@@ -184,302 +171,180 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="flex">
-        {/* Left Sidebar */}
-        <div className="w-80 bg-white border-r border-gray-200 p-6">
-          <h2 className="text-lg font-semibold mb-4">Tracked Keywords</h2>
+    <div className="flex min-h-screen">
+      <Navigation />
+      <div className="flex-1">
+        <div className="min-h-screen bg-gray-50">
+          <div className="flex">
+            {/* Left Sidebar - existing keyword sidebar */}
+            <div className="w-80 bg-white border-r border-gray-200 p-6">
+              <h2 className="text-lg font-semibold mb-4">Tracked Keywords</h2>
 
-          <div className="space-y-2 mb-4">
-            {keywords.map((keyword) => (
-              <div key={keyword} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                <span className="text-sm">{keyword}</span>
-                <Button variant="ghost" size="sm" onClick={() => removeKeyword(keyword)} className="h-6 w-6 p-0">
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex gap-2">
-            <Input
-              placeholder="Add keyword"
-              value={newKeyword}
-              onChange={(e) => setNewKeyword(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && addKeyword()}
-              className="text-sm"
-            />
-            <Button onClick={addKeyword} size="sm">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 p-6">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Reddit Monitoring Dashboard</h1>
-            <p className="text-gray-600">Track mentions and engage with your community</p>
-          </div>
-
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-6">
-              <TabsTrigger value="mentions" className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" />
-                Mentions
-              </TabsTrigger>
-              <TabsTrigger value="analytics" className="flex items-center gap-2">
-                <BarChart3 className="h-4 w-4" />
-                Analytics
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="mentions">
-              <div className="space-y-4">
-                {mentions.map((mention) => (
-                  <Card key={mention.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                    <CardContent className="p-6" onClick={() => openMentionModal(mention)}>
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <Badge variant="outline">{mention.subreddit}</Badge>
-                          <span className="text-sm text-gray-500">{mention.age}</span>
-                          <div className={`w-2 h-2 rounded-full ${getPriorityColor(mention.priority)}`} />
-                          {getStatusIcon(mention.status)}
-                        </div>
-                        <Badge className={getSentimentColor(mention.sentiment)}>{mention.sentiment}</Badge>
-                      </div>
-
-                      <h3 className="font-semibold mb-2">{mention.title}</h3>
-                      <p className="text-gray-600 text-sm mb-3">{mention.snippet}</p>
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
-                          <span className="flex items-center gap-1">
-                            <ThumbsUp className="h-4 w-4" />
-                            {mention.upvotes}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <MessageSquare className="h-4 w-4" />
-                            {mention.comments}
-                          </span>
-                        </div>
-                        <div className="flex gap-1">
-                          {mention.matchedKeywords.map((keyword) => (
-                            <Badge key={keyword} variant="secondary" className="text-xs">
-                              {keyword}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+              <div className="space-y-2 mb-4">
+                {keywords.map((keyword) => (
+                  <div key={keyword} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                    <span className="text-sm">{keyword}</span>
+                    <Button variant="ghost" size="sm" onClick={() => removeKeyword(keyword)} className="h-6 w-6 p-0">
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
                 ))}
               </div>
-            </TabsContent>
 
-            <TabsContent value="analytics">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Total Mentions</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">127</div>
-                    <p className="text-xs text-gray-500">+12% from last week</p>
-                  </CardContent>
-                </Card>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add keyword"
+                  value={newKeyword}
+                  onChange={(e) => setNewKeyword(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && addKeyword()}
+                  className="text-sm"
+                />
+                <Button onClick={addKeyword} size="sm">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
 
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Response Rate</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">68%</div>
-                    <p className="text-xs text-gray-500">+5% from last week</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Avg Response Time</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">2.4h</div>
-                    <p className="text-xs text-gray-500">-0.3h from last week</p>
-                  </CardContent>
-                </Card>
+            {/* Main Content */}
+            <div className="flex-1 p-6">
+              <div className="mb-6">
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">Reddit Monitoring Dashboard</h1>
+                <p className="text-gray-600">Track mentions and engage with your community</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Top Subreddits</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {["r/entrepreneur", "r/SaaS", "r/startups", "r/productivity"].map((sub, index) => (
-                        <div key={sub} className="flex justify-between items-center">
-                          <span className="text-sm">{sub}</span>
-                          <Badge variant="secondary">{[45, 32, 28, 22][index]}</Badge>
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="mb-6">
+                  <TabsTrigger value="mentions" className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    Mentions
+                  </TabsTrigger>
+                  <TabsTrigger value="analytics" className="flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4" />
+                    Analytics
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="mentions">
+                  <div className="space-y-4">
+                    {mentions.map((mention) => (
+                      <Card key={mention.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                        <CardContent className="p-6" onClick={() => openMentionModal(mention)}>
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <Badge variant="outline">{mention.subreddit}</Badge>
+                              <span className="text-sm text-gray-500">{mention.age}</span>
+                              <div className={`w-2 h-2 rounded-full ${getPriorityColor(mention.priority)}`} />
+                              {getStatusIcon(mention.status)}
+                            </div>
+                            <Badge className={getSentimentColor(mention.sentiment)}>{mention.sentiment}</Badge>
+                          </div>
+
+                          <h3 className="font-semibold mb-2">{mention.title}</h3>
+                          <p className="text-gray-600 text-sm mb-3">{mention.snippet}</p>
+
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4 text-sm text-gray-500">
+                              <span className="flex items-center gap-1">
+                                <ThumbsUp className="h-4 w-4" />
+                                {mention.upvotes}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <MessageSquare className="h-4 w-4" />
+                                {mention.comments}
+                              </span>
+                            </div>
+                            <div className="flex gap-1">
+                              {mention.matchedKeywords.map((keyword) => (
+                                <Badge key={keyword} variant="secondary" className="text-xs">
+                                  {keyword}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="analytics">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium">Total Mentions</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">127</div>
+                        <p className="text-xs text-gray-500">+12% from last week</p>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium">Response Rate</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">68%</div>
+                        <p className="text-xs text-gray-500">+5% from last week</p>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium">Avg Response Time</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">2.4h</div>
+                        <p className="text-xs text-gray-500">-0.3h from last week</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Top Subreddits</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {["r/entrepreneur", "r/SaaS", "r/startups", "r/productivity"].map((sub, index) => (
+                            <div key={sub} className="flex justify-between items-center">
+                              <span className="text-sm">{sub}</span>
+                              <Badge variant="secondary">{[45, 32, 28, 22][index]}</Badge>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                      </CardContent>
+                    </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Sentiment Distribution</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Positive</span>
-                        <Badge className="bg-green-100 text-green-800">42</Badge>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Neutral</span>
-                        <Badge className="bg-gray-100 text-gray-800">65</Badge>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Negative</span>
-                        <Badge className="bg-red-100 text-red-800">20</Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-          </Tabs>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Sentiment Distribution</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Positive</span>
+                            <Badge className="bg-green-100 text-green-800">42</Badge>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Neutral</span>
+                            <Badge className="bg-gray-100 text-gray-800">65</Badge>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Negative</span>
+                            <Badge className="bg-red-100 text-red-800">20</Badge>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* Mention Detail Modal */}
-      <Dialog open={!!selectedMention} onOpenChange={() => setSelectedMention(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          {selectedMention && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Badge variant="outline">{selectedMention.subreddit}</Badge>
-                  {selectedMention.title}
-                </DialogTitle>
-                <DialogDescription>
-                  by u/{selectedMention.author} • {selectedMention.age}
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Original Post */}
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold mb-2">Original Post</h3>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <p className="text-sm">{selectedMention.fullPost}</p>
-                      <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <ThumbsUp className="h-4 w-4" />
-                          {selectedMention.upvotes}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <MessageSquare className="h-4 w-4" />
-                          {selectedMention.comments}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="font-semibold mb-2">Top Comments</h3>
-                    <div className="space-y-3">
-                      {selectedMention.topComments.map((comment, index) => (
-                        <div key={index} className="bg-gray-50 p-3 rounded-lg">
-                          <div className="flex justify-between items-start mb-1">
-                            <span className="font-medium text-sm">u/{comment.author}</span>
-                            <span className="text-xs text-gray-500 flex items-center gap-1">
-                              <ThumbsUp className="h-3 w-3" />
-                              {comment.upvotes}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-700">{comment.content}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* AI Analysis & Actions */}
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold mb-2">AI Summary</h3>
-                    <div className="bg-blue-50 p-4 rounded-lg space-y-3">
-                      <div>
-                        <h4 className="font-medium text-sm mb-1">Overview</h4>
-                        <p className="text-sm text-gray-700">
-                          User is seeking project management solutions for their remote team of 8 people.
-                        </p>
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-sm mb-1">Key Points</h4>
-                        <ul className="text-sm text-gray-700 list-disc list-inside space-y-1">
-                          <li>Team coordination challenges</li>
-                          <li>Previous tools didn't work well</li>
-                          <li>Looking for simple but feature-rich solution</li>
-                        </ul>
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-sm mb-1">Opportunities</h4>
-                        <p className="text-sm text-green-700">
-                          High relevance - matches target audience and pain points perfectly
-                        </p>
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-sm mb-1">Risks</h4>
-                        <p className="text-sm text-red-700">Competitors already mentioned in comments</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="font-semibold mb-2">Draft Reply</h3>
-                    <Textarea value={aiReply} onChange={(e) => setAiReply(e.target.value)} rows={6} className="mb-3" />
-
-                    <div className="bg-yellow-50 p-3 rounded-lg mb-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-sm">Compliance Score</span>
-                        <span className="text-sm font-bold">{complianceScore}%</span>
-                      </div>
-                      <Progress value={complianceScore} className="mb-2" />
-                      <ul className="text-xs text-gray-600 space-y-1">
-                        <li>✓ Includes disclosure statement</li>
-                        <li>✓ Helpful and relevant</li>
-                        <li>⚠ Could be more specific about benefits</li>
-                      </ul>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button size="sm" className="flex items-center gap-1">
-                        <Copy className="h-3 w-3" />
-                        Copy Reply
-                      </Button>
-                      <Button variant="outline" size="sm" className="flex items-center gap-1 bg-transparent">
-                        <RefreshCw className="h-3 w-3" />
-                        Regenerate
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        Mark Responded
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        Ignore
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

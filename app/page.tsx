@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { X, Plus, ArrowRight } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { Navigation } from "@/components/navigation"
 
 interface BrandData {
   name: string
@@ -126,194 +127,197 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">RedditReach Setup</h1>
-          <p className="text-gray-600">Let's understand your brand and find the right communities</p>
-        </div>
-
-        {/* Progress */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            {steps.map((step, index) => (
-              <div key={index} className={`flex items-center ${index < steps.length - 1 ? "flex-1" : ""}`}>
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    index <= currentStep ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-600"
-                  }`}
-                >
-                  {index + 1}
-                </div>
-                <div className="ml-3 hidden sm:block">
-                  <p className={`text-sm font-medium ${index <= currentStep ? "text-blue-600" : "text-gray-500"}`}>
-                    {step.title}
-                  </p>
-                  <p className="text-xs text-gray-500">{step.description}</p>
-                </div>
-                {index < steps.length - 1 && (
-                  <div className={`flex-1 h-0.5 mx-4 ${index < currentStep ? "bg-blue-600" : "bg-gray-200"}`} />
-                )}
-              </div>
-            ))}
+    <div className="flex min-h-screen">
+      <Navigation />
+      <div className="flex-1">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">RedditReach Setup</h1>
+            <p className="text-gray-600">Let's understand your brand and find the right communities</p>
           </div>
-          <Progress value={((currentStep + 1) / steps.length) * 100} className="h-2" />
-        </div>
 
-        {/* Step Content */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>{steps[currentStep].title}</CardTitle>
-            <CardDescription>{steps[currentStep].description}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {currentStep === 0 && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="brandName">Brand Name *</Label>
-                  <Input
-                    id="brandName"
-                    placeholder="e.g., TechFlow Solutions"
-                    value={brandData.name}
-                    onChange={(e) => updateBrandData("name", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="oneLiner">One-liner Description *</Label>
-                  <Input
-                    id="oneLiner"
-                    placeholder="e.g., AI-powered project management for remote teams"
-                    value={brandData.oneLiner}
-                    onChange={(e) => updateBrandData("oneLiner", e.target.value)}
-                  />
-                </div>
-              </>
-            )}
-
-            {currentStep === 1 && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="products">Products/Services *</Label>
-                  <Textarea
-                    id="products"
-                    placeholder="e.g., SaaS platform, mobile app, consulting services"
-                    value={brandData.products}
-                    onChange={(e) => updateBrandData("products", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="targetUsers">Target Users *</Label>
-                  <Textarea
-                    id="targetUsers"
-                    placeholder="e.g., Remote team managers, startup founders, project coordinators"
-                    value={brandData.targetUsers}
-                    onChange={(e) => updateBrandData("targetUsers", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="valueProps">Value Propositions *</Label>
-                  <Textarea
-                    id="valueProps"
-                    placeholder="e.g., Increase productivity by 40%, reduce meeting time, seamless integration"
-                    value={brandData.valueProps}
-                    onChange={(e) => updateBrandData("valueProps", e.target.value)}
-                  />
-                </div>
-              </>
-            )}
-
-            {currentStep === 2 && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="tone">Brand Tone & Voice *</Label>
-                  <Textarea
-                    id="tone"
-                    placeholder="e.g., Professional but friendly, helpful, data-driven, conversational"
-                    value={brandData.tone}
-                    onChange={(e) => updateBrandData("tone", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="competitors">Main Competitors *</Label>
-                  <Textarea
-                    id="competitors"
-                    placeholder="e.g., Asana, Monday.com, Trello, Notion"
-                    value={brandData.competitors}
-                    onChange={(e) => updateBrandData("competitors", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="prohibited">Prohibited Topics (Optional)</Label>
-                  <Textarea
-                    id="prohibited"
-                    placeholder="e.g., Politics, controversial topics, competitor bashing"
-                    value={brandData.prohibitedTopics}
-                    onChange={(e) => updateBrandData("prohibitedTopics", e.target.value)}
-                  />
-                </div>
-              </>
-            )}
-
-            {currentStep === 3 && (
-              <>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Auto-generated Keywords</Label>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Based on your brand info, we've generated these keywords to monitor:
-                    </p>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {brandData.keywords.map((keyword) => (
-                        <Badge key={keyword} variant="secondary" className="flex items-center gap-1">
-                          {keyword}
-                          <X
-                            className="h-3 w-3 cursor-pointer hover:text-red-500"
-                            onClick={() => removeKeyword(keyword)}
-                          />
-                        </Badge>
-                      ))}
-                    </div>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Add custom keyword"
-                        value={newKeyword}
-                        onChange={(e) => setNewKeyword(e.target.value)}
-                        onKeyPress={(e) => e.key === "Enter" && addKeyword()}
-                      />
-                      <Button onClick={addKeyword} size="sm">
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
+          {/* Progress */}
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-4">
+              {steps.map((step, index) => (
+                <div key={index} className={`flex items-center ${index < steps.length - 1 ? "flex-1" : ""}`}>
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      index <= currentStep ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-600"
+                    }`}
+                  >
+                    {index + 1}
                   </div>
+                  <div className="ml-3 hidden sm:block">
+                    <p className={`text-sm font-medium ${index <= currentStep ? "text-blue-600" : "text-gray-500"}`}>
+                      {step.title}
+                    </p>
+                    <p className="text-xs text-gray-500">{step.description}</p>
+                  </div>
+                  {index < steps.length - 1 && (
+                    <div className={`flex-1 h-0.5 mx-4 ${index < currentStep ? "bg-blue-600" : "bg-gray-200"}`} />
+                  )}
+                </div>
+              ))}
+            </div>
+            <Progress value={((currentStep + 1) / steps.length) * 100} className="h-2" />
+          </div>
 
+          {/* Step Content */}
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>{steps[currentStep].title}</CardTitle>
+              <CardDescription>{steps[currentStep].description}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {currentStep === 0 && (
+                <>
                   <div className="space-y-2">
-                    <Label htmlFor="disclosure">Disclosure Statement *</Label>
-                    <Textarea
-                      id="disclosure"
-                      placeholder="How you'll identify yourself when engaging"
-                      value={brandData.disclosure}
-                      onChange={(e) => updateBrandData("disclosure", e.target.value)}
+                    <Label htmlFor="brandName">Brand Name *</Label>
+                    <Input
+                      id="brandName"
+                      placeholder="e.g., TechFlow Solutions"
+                      value={brandData.name}
+                      onChange={(e) => updateBrandData("name", e.target.value)}
                     />
-                    <p className="text-xs text-gray-500">
-                      This will be included in your replies to maintain transparency
-                    </p>
                   </div>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+                  <div className="space-y-2">
+                    <Label htmlFor="oneLiner">One-liner Description *</Label>
+                    <Input
+                      id="oneLiner"
+                      placeholder="e.g., AI-powered project management for remote teams"
+                      value={brandData.oneLiner}
+                      onChange={(e) => updateBrandData("oneLiner", e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
 
-        {/* Navigation */}
-        <div className="flex justify-between">
-          <Button variant="outline" onClick={prevStep} disabled={currentStep === 0}>
-            Previous
-          </Button>
-          <Button onClick={nextStep} disabled={!canProceed()} className="flex items-center gap-2">
-            {currentStep === steps.length - 1 ? "Find Subreddits" : "Next"}
-            <ArrowRight className="h-4 w-4" />
-          </Button>
+              {currentStep === 1 && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="products">Products/Services *</Label>
+                    <Textarea
+                      id="products"
+                      placeholder="e.g., SaaS platform, mobile app, consulting services"
+                      value={brandData.products}
+                      onChange={(e) => updateBrandData("products", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="targetUsers">Target Users *</Label>
+                    <Textarea
+                      id="targetUsers"
+                      placeholder="e.g., Remote team managers, startup founders, project coordinators"
+                      value={brandData.targetUsers}
+                      onChange={(e) => updateBrandData("targetUsers", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="valueProps">Value Propositions *</Label>
+                    <Textarea
+                      id="valueProps"
+                      placeholder="e.g., Increase productivity by 40%, reduce meeting time, seamless integration"
+                      value={brandData.valueProps}
+                      onChange={(e) => updateBrandData("valueProps", e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
+
+              {currentStep === 2 && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="tone">Brand Tone & Voice *</Label>
+                    <Textarea
+                      id="tone"
+                      placeholder="e.g., Professional but friendly, helpful, data-driven, conversational"
+                      value={brandData.tone}
+                      onChange={(e) => updateBrandData("tone", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="competitors">Main Competitors *</Label>
+                    <Textarea
+                      id="competitors"
+                      placeholder="e.g., Asana, Monday.com, Trello, Notion"
+                      value={brandData.competitors}
+                      onChange={(e) => updateBrandData("competitors", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="prohibited">Prohibited Topics (Optional)</Label>
+                    <Textarea
+                      id="prohibited"
+                      placeholder="e.g., Politics, controversial topics, competitor bashing"
+                      value={brandData.prohibitedTopics}
+                      onChange={(e) => updateBrandData("prohibitedTopics", e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
+
+              {currentStep === 3 && (
+                <>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Auto-generated Keywords</Label>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Based on your brand info, we've generated these keywords to monitor:
+                      </p>
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {brandData.keywords.map((keyword) => (
+                          <Badge key={keyword} variant="secondary" className="flex items-center gap-1">
+                            {keyword}
+                            <X
+                              className="h-3 w-3 cursor-pointer hover:text-red-500"
+                              onClick={() => removeKeyword(keyword)}
+                            />
+                          </Badge>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Add custom keyword"
+                          value={newKeyword}
+                          onChange={(e) => setNewKeyword(e.target.value)}
+                          onKeyPress={(e) => e.key === "Enter" && addKeyword()}
+                        />
+                        <Button onClick={addKeyword} size="sm">
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="disclosure">Disclosure Statement *</Label>
+                      <Textarea
+                        id="disclosure"
+                        placeholder="How you'll identify yourself when engaging"
+                        value={brandData.disclosure}
+                        onChange={(e) => updateBrandData("disclosure", e.target.value)}
+                      />
+                      <p className="text-xs text-gray-500">
+                        This will be included in your replies to maintain transparency
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Navigation */}
+          <div className="flex justify-between">
+            <Button variant="outline" onClick={prevStep} disabled={currentStep === 0}>
+              Previous
+            </Button>
+            <Button onClick={nextStep} disabled={!canProceed()} className="flex items-center gap-2">
+              {currentStep === steps.length - 1 ? "Find Subreddits" : "Next"}
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>
