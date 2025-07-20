@@ -45,14 +45,14 @@ const navItems: NavItem[] = [
   },
   {
     title: "Mentions",
-    href: "/dashboard",
+    href: "/dashboard?tab=mentions",
     icon: MessageSquare,
     badge: "12",
     description: "New mentions to review",
   },
   {
     title: "Analytics",
-    href: "/dashboard",
+    href: "/dashboard?tab=analytics",
     icon: BarChart3,
     description: "Performance metrics",
   },
@@ -121,9 +121,9 @@ export function Navigation() {
       <div className="flex-1 p-2">
         <nav className="space-y-1">
           {navItems.map((item) => {
-            const isActive = pathname === item.href
+            const isActive = pathname === item.href || pathname.startsWith(item.href.split('?')[0])
             return (
-              <Link key={item.href} href={item.href}>
+              <Link key={`${item.title}-${item.href}`} href={item.href}>
                 <div
                   className={cn(
                     "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
@@ -156,7 +156,7 @@ export function Navigation() {
           {bottomNavItems.map((item) => {
             const isActive = pathname === item.href
             return (
-              <Link key={item.href} href={item.href}>
+              <Link key={`${item.title}-${item.href}`} href={item.href}>
                 <div
                   className={cn(
                     "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
