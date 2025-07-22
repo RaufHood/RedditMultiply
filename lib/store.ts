@@ -122,6 +122,27 @@ export const useAppStore = create<AppState>()(
       setAnalytics: (analytics) => set({ analytics }),
       updateAnalytics: () => {
         const mentions = get().mentions
+        const responded_mentions = mentions.filter(m => m.status === 'RESPONDED')
+        
+        // Calculate real average response time
+        let avg_response_minutes = 0.0
+        if (responded_mentions.length > 0) {
+          let total_response_time = 0
+          let valid_responses = 0
+          
+          for (const mention of responded_mentions) {
+            if (mention.responded_at) {
+              const response_time = mention.responded_at - mention.created_utc
+              total_response_time += response_time
+              valid_responses += 1
+            }
+          }
+          
+          if (valid_responses > 0) {
+            avg_response_minutes = (total_response_time / valid_responses) / 60 // Convert seconds to minutes
+          }
+        }
+        
         const analytics: AnalyticsSnapshot = {
           timestamp: Math.floor(Date.now() / 1000),
           mention_totals: mentions.length,
@@ -139,8 +160,8 @@ export const useAppStore = create<AppState>()(
             .map(([name, count]) => ({ name, count }))
             .sort((a, b) => b.count - a.count)
             .slice(0, 5),
-          responded_count: mentions.filter(m => m.status === 'RESPONDED').length,
-          avg_response_minutes: 0, // Placeholder - would need response timestamps
+          responded_count: responded_mentions.length,
+          avg_response_minutes: avg_response_minutes,
         }
         set({ analytics })
       },

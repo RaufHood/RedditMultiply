@@ -54,9 +54,7 @@ export default function DashboardPage() {
   const [localMentions, setLocalMentions] = useState<Mention[]>([])
   const [keywords, setKeywords] = useState<string[]>([])
   const [newKeyword, setNewKeyword] = useState("")
-  const [selectedMention, setSelectedMention] = useState<Mention | null>(null)
-  const [aiReply, setAiReply] = useState("")
-  const [complianceScore, setComplianceScore] = useState(85)
+
   const [activeTab, setActiveTab] = useState("mentions")
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -97,8 +95,8 @@ export default function DashboardPage() {
             priority: mention.priority,
             sentiment: mention.sentiment || "neutral",
             status: mention.status.toLowerCase() as "new" | "responded" | "ignored",
-            upvotes: 0,
-            comments: 0,
+            upvotes: mention.score ?? 0,
+            comments: mention.num_comments ?? 0,
             fullPost: mention.snippet,
             topComments: [],
           }))
@@ -119,8 +117,8 @@ export default function DashboardPage() {
               priority: mention.priority,
               sentiment: mention.sentiment || "neutral",
               status: mention.status.toLowerCase() as "new" | "responded" | "ignored",
-              upvotes: 0,
-              comments: 0,
+              upvotes: mention.score ?? 0,
+              comments: mention.num_comments ?? 0,
               fullPost: mention.snippet,
               topComments: [],
             }))
@@ -209,19 +207,24 @@ export default function DashboardPage() {
   }
 
   const openMentionModal = (mention: Mention) => {
-    setSelectedMention(mention)
-    // Generate AI reply
-    generateAIReply(mention)
+    // Navigate to thread detail page
+    router.push(`/thread/${mention.id}`)
   }
 
-  const generateAIReply = async (mention: Mention) => {
+
+
+  const markAsResponded = async (mentionId: string) => {
     try {
-      const replyDraft = await api.generateReplyDraft(mention.id)
-      setAiReply(replyDraft.draft_text)
-      setComplianceScore(replyDraft.compliance.score)
+      await api.updateMentionStatus(mentionId, "RESPONDED")
+      // Update local mentions
+      setLocalMentions(prev => prev.map(m => 
+        m.id === mentionId ? { ...m, status: 'responded' as const } : m
+      ))
+      // Update analytics
+      updateAnalytics()
     } catch (error) {
-      console.error('Failed to generate AI reply:', error)
-      setAiReply("Failed to generate reply. Please try again.")
+      console.error('Failed to mark as responded:', error)
+      setError("Failed to mark as responded. Please try again.")
     }
   }
 
@@ -293,13 +296,14 @@ export default function DashboardPage() {
           priority: mention.priority,
           sentiment: mention.sentiment || "neutral",
           status: mention.status.toLowerCase() as "new" | "responded" | "ignored",
-          upvotes: 0,
-          comments: 0,
+          upvotes: mention.score ?? 0,
+          comments: mention.num_comments ?? 0,
           fullPost: mention.snippet,
           topComments: [],
         }))
         
         setLocalMentions(convertedMentions)
+        updateAnalytics()
       } catch (apiError) {
         console.warn('Backend not available for refresh:', apiError)
         setError("Backend not available. Using cached data.")
@@ -474,8 +478,9 @@ export default function DashboardPage() {
                       </Card>
                     ) : (
                       filteredMentions.map((mention) => (
-                        <Card key={mention.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                          <CardContent className="p-6" onClick={() => openMentionModal(mention)}>
+                        <Card key={mention.id} className="hover:shadow-md transition-shadow">
+                          <CardContent className="p-6">
+                            <div className="cursor-pointer" onClick={() => openMentionModal(mention)}>
                             <div className="flex items-start justify-between mb-3">
                               <div className="flex items-center gap-3">
                                 <Badge variant="outline">{mention.subreddit}</Badge>
@@ -508,6 +513,25 @@ export default function DashboardPage() {
                                 ))}
                               </div>
                             </div>
+                            </div>
+                            
+                            {/* Action buttons */}
+                            <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
+                              {mention.status === 'new' && (
+                                <Button 
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    markAsResponded(mention.id)
+                                  }}
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex items-center gap-2"
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                  Mark Responded
+                                </Button>
+                              )}
+                            </div>
                           </CardContent>
                         </Card>
                       ))
@@ -518,7 +542,7 @@ export default function DashboardPage() {
                 <TabsContent value="analytics">
                   {storeAnalytics ? (
                     <>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                         <Card>
                           <CardHeader className="pb-2">
                             <CardTitle className="text-sm font-medium">Total Mentions</CardTitle>
@@ -542,20 +566,6 @@ export default function DashboardPage() {
                             <p className="text-xs text-gray-500">
                               {storeAnalytics.responded_count} of {storeAnalytics.mention_totals} responded
                             </p>
-                          </CardContent>
-                        </Card>
-
-                        <Card>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium">Avg Response Time</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="text-2xl font-bold">
-                              {storeAnalytics.avg_response_minutes > 0 
-                                ? `${Math.round(storeAnalytics.avg_response_minutes)}m`
-                                : 'N/A'}
-                            </div>
-                            <p className="text-xs text-gray-500">Average response time</p>
                           </CardContent>
                         </Card>
                       </div>

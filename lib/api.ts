@@ -41,6 +41,9 @@ export interface Mention {
   sentiment?: 'positive' | 'neutral' | 'negative'
   priority: 'high' | 'normal' | 'low'
   reply_draft_id?: string
+  score: number  // Reddit post score (upvotes - downvotes)
+  num_comments: number  // Number of comments on the post
+  responded_at?: number  // Timestamp when marked as responded
 }
 
 export interface ReplyDraft {
@@ -182,10 +185,11 @@ export const api = {
     return response.json()
   },
 
-  // Thread Details
+  // Thread Analysis
   async getThreadSummary(threadId: string): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/threads/${threadId}/summary`, {
-      method: 'POST'
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
     })
     if (!response.ok) throw new Error('Failed to get thread summary')
     return response.json()
