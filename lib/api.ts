@@ -1,6 +1,16 @@
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? '/api'  // Vercel will route this to your FastAPI backend
-  : 'http://localhost:8000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || (
+  typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+    ? '/api'  // Production: use relative API path
+    : 'http://localhost:8000'  // Development: use local backend
+)
+
+// Debug log to see what URL is being used
+console.log('🔧 API Configuration:', {
+  NODE_ENV: process.env.NODE_ENV,
+  NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  hostname: typeof window !== 'undefined' ? window.location.hostname : 'server',
+  API_BASE_URL
+})
 
 // Types matching backend schemas
 export interface BrandContext {
