@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -11,6 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { X, Plus, Save, ArrowLeft } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Navigation } from "@/components/navigation"
+import { api, BrandContext } from "@/lib/api"
+import { useAppStore, convertBrandContextToLocal, convertLocalToBrandContext } from "@/lib/store"
 
 interface BrandData {
   name: string
@@ -27,20 +29,65 @@ interface BrandData {
 
 export default function SettingsPage() {
   const router = useRouter()
+  const { 
+    brandContext, 
+    setBrandContext, 
+    setLoading, 
+    setError, 
+    error, 
+    isLoading,
+    clearAllData
+  } = useAppStore()
+  
   const [brandData, setBrandData] = useState<BrandData>({
-    name: "TechFlow Solutions",
-    oneLiner: "AI-powered project management for remote teams",
-    products: "SaaS platform, mobile app, consulting services",
-    targetUsers: "Remote team managers, startup founders, project coordinators",
-    valueProps: "Increase productivity by 40%, reduce meeting time, seamless integration",
-    tone: "Professional but friendly, helpful, data-driven, conversational",
-    competitors: "Asana, Monday.com, Trello, Notion",
-    prohibitedTopics: "Politics, controversial topics, competitor bashing",
-    keywords: ["project management", "remote teams", "productivity", "alternatives", "Monday.com", "Asana"],
-    disclosure: "I work at TechFlow Solutions and wanted to share some insights.",
+    name: "",
+    oneLiner: "",
+    products: "",
+    targetUsers: "",
+    valueProps: "",
+    tone: "",
+    competitors: "",
+    prohibitedTopics: "",
+    keywords: [],
+    disclosure: "",
   })
-
   const [newKeyword, setNewKeyword] = useState("")
+
+  // Load brand context from store or backend
+  useEffect(() => {
+    const loadBrandContext = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        // First try to load from local store
+        if (brandContext) {
+          const localData = convertBrandContextToLocal(brandContext)
+          setBrandData(localData)
+          setLoading(false)
+          return
+        }
+        
+        // If not in store, try backend
+        try {
+          const context = await api.getBrandContext()
+          setBrandContext(context)
+          const localData = convertBrandContextToLocal(context)
+          setBrandData(localData)
+        } catch (apiError) {
+          console.warn('Backend not available:', apiError)
+          setError("No brand context found. Please complete onboarding first.")
+        }
+      } catch (err) {
+        console.error('Failed to load brand context:', err)
+        setError("Failed to load brand context. Please complete onboarding first.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadBrandContext()
+  }, [brandContext, setBrandContext, setLoading, setError])
 
   const updateBrandData = (field: keyof BrandData, value: string) => {
     setBrandData((prev) => ({ ...prev, [field]: value }))
@@ -63,11 +110,78 @@ export default function SettingsPage() {
     }))
   }
 
-  const handleSave = () => {
-    // Here you would typically save to backend
-    console.log("Saving brand data:", brandData)
-    // Show success message or redirect
-    router.push("/dashboard")
+  const handleSave = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // Convert local format back to backend format
+      const contextData = convertLocalToBrandContext(brandData)
+
+      // Save to backend (if available)
+      try {
+        await api.saveBrandContext(contextData)
+      } catch (apiError) {
+        console.warn('Backend not available, saving to local storage only:', apiError)
+      }
+      
+      // Save to local store
+      const completeBrandContext: BrandContext = {
+        brand_name: contextData.brand_name || "",
+        one_line: contextData.one_line || "",
+        products: contextData.products || [],
+        target_users: contextData.target_users || [],
+        value_props: contextData.value_props || [],
+        tone: contextData.tone || { formality: "neutral", voice_keywords: [] },
+        keywords: contextData.keywords || [],
+        competitors: contextData.competitors || [],
+        prohibited: contextData.prohibited || [],
+        disclosure_template: contextData.disclosure_template || "",
+      }
+      
+      setBrandContext(completeBrandContext)
+      router.push("/dashboard")
+    } catch (error) {
+      console.error('Failed to save brand context:', error)
+      setError("Failed to save changes. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen">
+        <Navigation />
+        <div className="flex-1">
+          <div className="p-6">
+            <div className="flex items-center justify-center h-64">
+              <p className="text-gray-600">Loading brand settings...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen">
+        <Navigation />
+        <div className="flex-1">
+          <div className="p-6">
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <p className="text-red-600 mb-4">{error}</p>
+                <Button onClick={() => router.push("/")}>
+                  Complete Onboarding
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -85,6 +199,13 @@ export default function SettingsPage() {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
             <p className="text-gray-600">Manage your brand configuration and preferences</p>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
 
           <Tabs defaultValue="brand" className="space-y-6">
             <TabsList>
@@ -254,7 +375,14 @@ export default function SettingsPage() {
             </TabsContent>
           </Tabs>
 
-          <div className="flex justify-end mt-8">
+          <div className="flex justify-between mt-8">
+            <Button 
+              onClick={clearAllData} 
+              variant="outline" 
+              className="flex items-center gap-2"
+            >
+              Reset All Data
+            </Button>
             <Button onClick={handleSave} className="flex items-center gap-2">
               <Save className="h-4 w-4" />
               Save Changes

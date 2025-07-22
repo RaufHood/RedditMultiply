@@ -11,19 +11,8 @@ import { Progress } from "@/components/ui/progress"
 import { X, Plus, ArrowRight } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Navigation } from "@/components/navigation"
-
-interface BrandData {
-  name: string
-  oneLiner: string
-  products: string
-  targetUsers: string
-  valueProps: string
-  tone: string
-  competitors: string
-  prohibitedTopics: string
-  keywords: string[]
-  disclosure: string
-}
+import { api, BrandContext } from "@/lib/api"
+import { useAppStore, convertLocalToBrandContext } from "@/lib/store"
 
 const steps = [
   { title: "Brand Basics", description: "Tell us about your brand" },
@@ -34,31 +23,33 @@ const steps = [
 
 export default function OnboardingPage() {
   const router = useRouter()
+  const { setBrandContext, setLoading, setError, error, isLoading } = useAppStore()
   const [currentStep, setCurrentStep] = useState(0)
-  const [brandData, setBrandData] = useState<BrandData>({
-    name: "",
-    oneLiner: "",
-    products: "",
-    targetUsers: "",
-    valueProps: "",
-    tone: "",
-    competitors: "",
-    prohibitedTopics: "",
+  const [brandData, setBrandData] = useState<Partial<BrandContext>>({
+    brand_name: "",
+    one_line: "",
+    products: [],
+    target_users: [],
+    value_props: [],
+    tone: { formality: "neutral", voice_keywords: [] },
     keywords: [],
-    disclosure: "",
+    competitors: [],
+    prohibited: [],
+    disclosure_template: "",
   })
 
   const [newKeyword, setNewKeyword] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const updateBrandData = (field: keyof BrandData, value: string) => {
+  const updateBrandData = (field: keyof BrandContext, value: any) => {
     setBrandData((prev) => ({ ...prev, [field]: value }))
   }
 
   const addKeyword = () => {
-    if (newKeyword.trim() && !brandData.keywords.includes(newKeyword.trim())) {
+    if (newKeyword.trim() && !brandData.keywords?.includes(newKeyword.trim())) {
       setBrandData((prev) => ({
         ...prev,
-        keywords: [...prev.keywords, newKeyword.trim()],
+        keywords: [...(prev.keywords || []), newKeyword.trim()],
       }))
       setNewKeyword("")
     }
@@ -67,28 +58,28 @@ export default function OnboardingPage() {
   const removeKeyword = (keyword: string) => {
     setBrandData((prev) => ({
       ...prev,
-      keywords: prev.keywords.filter((k) => k !== keyword),
+      keywords: prev.keywords?.filter((k) => k !== keyword) || [],
     }))
   }
 
   const generateKeywords = () => {
     // Auto-generate keywords based on brand data
     const generated = [
-      brandData.name.toLowerCase(),
-      ...brandData.products.split(",").map((p) => p.trim().toLowerCase()),
-      ...brandData.valueProps.split(",").map((v) => v.trim().toLowerCase()),
+      brandData.brand_name?.toLowerCase(),
+      ...(brandData.products || []).map((p) => p.toLowerCase()),
+      ...(brandData.value_props || []).map((v) => v.toLowerCase()),
       "customer support",
       "alternatives",
       "reviews",
-    ].filter((k) => k && k.length > 2)
+    ].filter((k) => k && k.length > 2) as string[]
 
     setBrandData((prev) => ({
       ...prev,
-      keywords: [...new Set([...prev.keywords, ...generated])],
+      keywords: [...new Set([...(prev.keywords || []), ...generated])],
     }))
   }
 
-  const nextStep = () => {
+  const nextStep = async () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1)
       if (currentStep === 2) {
@@ -96,12 +87,46 @@ export default function OnboardingPage() {
         generateKeywords()
         setBrandData((prev) => ({
           ...prev,
-          disclosure: `I work at ${prev.name} and wanted to share some insights.`,
+          disclosure_template: `I work at ${prev.brand_name} and wanted to share some insights.`,
         }))
       }
     } else {
-      // Move to discovery screen
-      router.push("/discovery")
+      // Save brand context and move to discovery
+      try {
+        setIsSubmitting(true)
+        setError(null)
+        setLoading(true)
+        
+        // Save to backend (if available)
+        try {
+          await api.saveBrandContext(brandData)
+        } catch (apiError) {
+          console.warn('Backend not available, saving to local storage only:', apiError)
+        }
+        
+        // Save to local store
+        const completeBrandContext: BrandContext = {
+          brand_name: brandData.brand_name || "",
+          one_line: brandData.one_line || "",
+          products: brandData.products || [],
+          target_users: brandData.target_users || [],
+          value_props: brandData.value_props || [],
+          tone: brandData.tone || { formality: "neutral", voice_keywords: [] },
+          keywords: brandData.keywords || [],
+          competitors: brandData.competitors || [],
+          prohibited: brandData.prohibited || [],
+          disclosure_template: brandData.disclosure_template || "",
+        }
+        
+        setBrandContext(completeBrandContext)
+        router.push("/discovery")
+      } catch (error) {
+        console.error('Failed to save brand context:', error)
+        setError("Failed to save brand context. Please try again.")
+      } finally {
+        setIsSubmitting(false)
+        setLoading(false)
+      }
     }
   }
 
@@ -114,13 +139,13 @@ export default function OnboardingPage() {
   const canProceed = () => {
     switch (currentStep) {
       case 0:
-        return brandData.name && brandData.oneLiner
+        return brandData.brand_name && brandData.one_line
       case 1:
-        return brandData.products && brandData.targetUsers && brandData.valueProps
+        return brandData.products && brandData.products.length > 0 && brandData.target_users && brandData.target_users.length > 0 && brandData.value_props && brandData.value_props.length > 0
       case 2:
-        return brandData.tone && brandData.competitors
+        return brandData.tone && brandData.tone.formality && brandData.competitors && brandData.competitors.length > 0
       case 3:
-        return brandData.keywords.length > 0 && brandData.disclosure
+        return brandData.keywords && brandData.keywords.length > 0 && brandData.disclosure_template
       default:
         return false
     }
@@ -178,8 +203,8 @@ export default function OnboardingPage() {
                     <Input
                       id="brandName"
                       placeholder="e.g., TechFlow Solutions"
-                      value={brandData.name}
-                      onChange={(e) => updateBrandData("name", e.target.value)}
+                      value={brandData.brand_name || ""}
+                      onChange={(e) => updateBrandData("brand_name", e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
@@ -187,8 +212,8 @@ export default function OnboardingPage() {
                     <Input
                       id="oneLiner"
                       placeholder="e.g., AI-powered project management for remote teams"
-                      value={brandData.oneLiner}
-                      onChange={(e) => updateBrandData("oneLiner", e.target.value)}
+                      value={brandData.one_line || ""}
+                      onChange={(e) => updateBrandData("one_line", e.target.value)}
                     />
                   </div>
                 </>
@@ -201,8 +226,8 @@ export default function OnboardingPage() {
                     <Textarea
                       id="products"
                       placeholder="e.g., SaaS platform, mobile app, consulting services"
-                      value={brandData.products}
-                      onChange={(e) => updateBrandData("products", e.target.value)}
+                      value={brandData.products?.join(', ') || ""}
+                      onChange={(e) => updateBrandData("products", e.target.value.split(',').map(s => s.trim()).filter(s => s))}
                     />
                   </div>
                   <div className="space-y-2">
@@ -210,8 +235,8 @@ export default function OnboardingPage() {
                     <Textarea
                       id="targetUsers"
                       placeholder="e.g., Remote team managers, startup founders, project coordinators"
-                      value={brandData.targetUsers}
-                      onChange={(e) => updateBrandData("targetUsers", e.target.value)}
+                      value={brandData.target_users?.join(', ') || ""}
+                      onChange={(e) => updateBrandData("target_users", e.target.value.split(',').map(s => s.trim()).filter(s => s))}
                     />
                   </div>
                   <div className="space-y-2">
@@ -219,8 +244,8 @@ export default function OnboardingPage() {
                     <Textarea
                       id="valueProps"
                       placeholder="e.g., Increase productivity by 40%, reduce meeting time, seamless integration"
-                      value={brandData.valueProps}
-                      onChange={(e) => updateBrandData("valueProps", e.target.value)}
+                      value={brandData.value_props?.join(', ') || ""}
+                      onChange={(e) => updateBrandData("value_props", e.target.value.split(',').map(s => s.trim()).filter(s => s))}
                     />
                   </div>
                 </>
@@ -233,8 +258,8 @@ export default function OnboardingPage() {
                     <Textarea
                       id="tone"
                       placeholder="e.g., Professional but friendly, helpful, data-driven, conversational"
-                      value={brandData.tone}
-                      onChange={(e) => updateBrandData("tone", e.target.value)}
+                      value={brandData.tone?.voice_keywords?.join(', ') || ""}
+                      onChange={(e) => updateBrandData("tone", { formality: "neutral", voice_keywords: e.target.value.split(',').map(s => s.trim()).filter(s => s) })}
                     />
                   </div>
                   <div className="space-y-2">
@@ -242,8 +267,8 @@ export default function OnboardingPage() {
                     <Textarea
                       id="competitors"
                       placeholder="e.g., Asana, Monday.com, Trello, Notion"
-                      value={brandData.competitors}
-                      onChange={(e) => updateBrandData("competitors", e.target.value)}
+                      value={brandData.competitors?.join(', ') || ""}
+                      onChange={(e) => updateBrandData("competitors", e.target.value.split(',').map(s => s.trim()).filter(s => s))}
                     />
                   </div>
                   <div className="space-y-2">
@@ -251,8 +276,8 @@ export default function OnboardingPage() {
                     <Textarea
                       id="prohibited"
                       placeholder="e.g., Politics, controversial topics, competitor bashing"
-                      value={brandData.prohibitedTopics}
-                      onChange={(e) => updateBrandData("prohibitedTopics", e.target.value)}
+                      value={brandData.prohibited?.join(', ') || ""}
+                      onChange={(e) => updateBrandData("prohibited", e.target.value.split(',').map(s => s.trim()).filter(s => s))}
                     />
                   </div>
                 </>
@@ -267,7 +292,7 @@ export default function OnboardingPage() {
                         Based on your brand info, we've generated these keywords to monitor:
                       </p>
                       <div className="flex flex-wrap gap-2 mb-4">
-                        {brandData.keywords.map((keyword) => (
+                        {brandData.keywords?.map((keyword) => (
                           <Badge key={keyword} variant="secondary" className="flex items-center gap-1">
                             {keyword}
                             <X
@@ -295,8 +320,8 @@ export default function OnboardingPage() {
                       <Textarea
                         id="disclosure"
                         placeholder="How you'll identify yourself when engaging"
-                        value={brandData.disclosure}
-                        onChange={(e) => updateBrandData("disclosure", e.target.value)}
+                        value={brandData.disclosure_template || ""}
+                        onChange={(e) => updateBrandData("disclosure_template", e.target.value)}
                       />
                       <p className="text-xs text-gray-500">
                         This will be included in your replies to maintain transparency
@@ -308,13 +333,20 @@ export default function OnboardingPage() {
             </CardContent>
           </Card>
 
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
+
           {/* Navigation */}
           <div className="flex justify-between">
             <Button variant="outline" onClick={prevStep} disabled={currentStep === 0}>
               Previous
             </Button>
-            <Button onClick={nextStep} disabled={!canProceed()} className="flex items-center gap-2">
-              {currentStep === steps.length - 1 ? "Find Subreddits" : "Next"}
+            <Button onClick={nextStep} disabled={!canProceed() || isSubmitting} className="flex items-center gap-2">
+              {isSubmitting ? "Saving..." : currentStep === steps.length - 1 ? "Find Subreddits" : "Next"}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>

@@ -1,13 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
-import { Plus, X, MessageSquare, ThumbsUp, AlertCircle, CheckCircle, Eye, BarChart3 } from "lucide-react"
+import { Plus, X, MessageSquare, ThumbsUp, AlertCircle, CheckCircle, Eye, BarChart3, RefreshCw } from "lucide-react"
 import { Navigation } from "@/components/navigation"
+import { api, Mention as ApiMention, BrandContext, AnalyticsSnapshot } from "@/lib/api"
+import { useAppStore } from "@/lib/store"
 
 interface Mention {
   id: string
@@ -17,7 +20,7 @@ interface Mention {
   author: string
   age: string
   matchedKeywords: string[]
-  priority: "high" | "medium" | "low"
+  priority: "high" | "normal" | "low"
   sentiment: "positive" | "negative" | "neutral"
   status: "new" | "responded" | "ignored"
   upvotes: number
@@ -30,92 +33,179 @@ interface Mention {
   }>
 }
 
-const mockMentions: Mention[] = [
-  {
-    id: "1",
-    subreddit: "r/entrepreneur",
-    title: "Looking for project management tools for my startup",
-    snippet:
-      "We're a team of 8 and struggling with coordination. Any recommendations for tools that work well for remote teams?",
-    author: "startup_founder_23",
-    age: "2h",
-    matchedKeywords: ["project management", "remote teams"],
-    priority: "high",
-    sentiment: "neutral",
-    status: "new",
-    upvotes: 15,
-    comments: 8,
-    fullPost:
-      "We're a team of 8 and struggling with coordination. Any recommendations for tools that work well for remote teams? We've tried a few but nothing seems to stick. Looking for something that's not too complex but has good features for tracking progress and deadlines.",
-    topComments: [
-      { author: "pm_expert", content: "Have you tried Asana? Works great for our team.", upvotes: 5 },
-      { author: "remote_worker", content: "Monday.com is expensive but worth it", upvotes: 3 },
-    ],
-  },
-  {
-    id: "2",
-    subreddit: "r/SaaS",
-    title: "Alternatives to Monday.com?",
-    snippet:
-      "Monday.com is getting too expensive for our growing team. What are some good alternatives that offer similar features?",
-    author: "saas_builder",
-    age: "4h",
-    matchedKeywords: ["alternatives", "Monday.com"],
-    priority: "high",
-    sentiment: "negative",
-    status: "new",
-    upvotes: 23,
-    comments: 12,
-    fullPost:
-      "Monday.com is getting too expensive for our growing team. What are some good alternatives that offer similar features? We need something with good automation, custom fields, and team collaboration features.",
-    topComments: [
-      { author: "cost_saver", content: "Check out ClickUp, much more affordable", upvotes: 8 },
-      { author: "project_lead", content: "Notion can work if you set it up right", upvotes: 4 },
-    ],
-  },
-  {
-    id: "3",
-    subreddit: "r/productivity",
-    title: "How to reduce meeting fatigue in remote teams?",
-    snippet:
-      "Our team is spending way too much time in meetings. Any tools or strategies to make collaboration more efficient?",
-    author: "productivity_seeker",
-    age: "6h",
-    matchedKeywords: ["remote teams", "productivity"],
-    priority: "medium",
-    sentiment: "neutral",
-    status: "responded",
-    upvotes: 31,
-    comments: 18,
-    fullPost:
-      "Our team is spending way too much time in meetings. Any tools or strategies to make collaboration more efficient? We're all remote and it feels like we're always in Zoom calls.",
-    topComments: [
-      { author: "meeting_hater", content: "Async communication is key. Use Slack more.", upvotes: 12 },
-      { author: "remote_manager", content: "Set meeting-free days, works wonders", upvotes: 9 },
-    ],
-  },
-]
-
-const mockKeywords = ["project management", "remote teams", "productivity", "alternatives", "Monday.com", "Asana"]
-
 export default function DashboardPage() {
-  const [mentions] = useState<Mention[]>(mockMentions)
-  const [keywords, setKeywords] = useState<string[]>(mockKeywords)
+  const router = useRouter()
+  const { 
+    mentions: storeMentions, 
+    setMentions, 
+    addMentions,
+    monitoringConfig,
+    addKeyword: storeAddKeyword,
+    removeKeyword: storeRemoveKeyword,
+    analytics: storeAnalytics,
+    setAnalytics,
+    updateAnalytics,
+    setLoading,
+    setError,
+    error,
+    isLoading
+  } = useAppStore()
+  
+  const [localMentions, setLocalMentions] = useState<Mention[]>([])
+  const [keywords, setKeywords] = useState<string[]>([])
   const [newKeyword, setNewKeyword] = useState("")
   const [selectedMention, setSelectedMention] = useState<Mention | null>(null)
   const [aiReply, setAiReply] = useState("")
   const [complianceScore, setComplianceScore] = useState(85)
   const [activeTab, setActiveTab] = useState("mentions")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
-  const addKeyword = () => {
+
+  // Load data on component mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        // Load keywords from store or monitoring status
+        if (monitoringConfig?.keywords) {
+          setKeywords(monitoringConfig.keywords)
+        } else {
+          try {
+            const monitoringStatus = await api.getMonitoringStatus()
+            setKeywords(monitoringStatus.config?.keywords || [])
+          } catch (apiError) {
+            console.warn('Backend not available for monitoring status:', apiError)
+            setKeywords([])
+          }
+        }
+        
+        // Load mentions from store or API
+        if (storeMentions.length > 0) {
+          // Convert store mentions to local format
+          const convertedMentions: Mention[] = storeMentions.map(mention => ({
+            id: mention.id,
+            subreddit: mention.subreddit,
+            title: mention.title || "",
+            snippet: mention.snippet,
+            author: mention.author,
+            age: formatTimeAgo(mention.created_utc),
+            matchedKeywords: mention.matched_keywords,
+            priority: mention.priority,
+            sentiment: mention.sentiment || "neutral",
+            status: mention.status.toLowerCase() as "new" | "responded" | "ignored",
+            upvotes: 0,
+            comments: 0,
+            fullPost: mention.snippet,
+            topComments: [],
+          }))
+          setLocalMentions(convertedMentions)
+        } else {
+          try {
+            const apiMentions = await api.getMentions()
+            addMentions(apiMentions)
+            
+            const convertedMentions: Mention[] = apiMentions.map(mention => ({
+              id: mention.id,
+              subreddit: mention.subreddit,
+              title: mention.title || "",
+              snippet: mention.snippet,
+              author: mention.author,
+              age: formatTimeAgo(mention.created_utc),
+              matchedKeywords: mention.matched_keywords,
+              priority: mention.priority,
+              sentiment: mention.sentiment || "neutral",
+              status: mention.status.toLowerCase() as "new" | "responded" | "ignored",
+              upvotes: 0,
+              comments: 0,
+              fullPost: mention.snippet,
+              topComments: [],
+            }))
+            setLocalMentions(convertedMentions)
+          } catch (apiError) {
+            console.warn('Backend not available for mentions:', apiError)
+            setLocalMentions([])
+          }
+        }
+              } catch (err) {
+          console.error('Failed to load dashboard data:', err)
+          setError("Failed to load dashboard data. Please try again.")
+        } finally {
+          setLoading(false)
+        }
+      }
+
+      const loadAnalytics = async () => {
+        try {
+          // Try to load analytics from backend
+          try {
+            const analyticsData = await api.getAnalytics()
+            setAnalytics(analyticsData)
+          } catch (apiError) {
+            console.warn('Backend not available for analytics, calculating from local data:', apiError)
+            updateAnalytics()
+          }
+        } catch (error) {
+          console.error('Failed to load analytics:', error)
+        }
+      }
+
+      loadData()
+      loadAnalytics()
+    }, [storeMentions, monitoringConfig, setLoading, setError, addMentions, setAnalytics, updateAnalytics])
+
+  const addKeyword = async () => {
     if (newKeyword.trim() && !keywords.includes(newKeyword.trim())) {
-      setKeywords([...keywords, newKeyword.trim()])
-      setNewKeyword("")
+      try {
+        // Try to add to backend first
+        try {
+          await api.addKeyword(newKeyword.trim())
+        } catch (apiError) {
+          console.warn('Backend not available, adding to local store only:', apiError)
+        }
+        
+        // Add to local state and store
+        const updatedKeywords = [...keywords, newKeyword.trim()]
+        setKeywords(updatedKeywords)
+        storeAddKeyword(newKeyword.trim())
+        setNewKeyword("")
+      } catch (error) {
+        console.error('Failed to add keyword:', error)
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+        if (errorMessage.includes('Monitoring not configured')) {
+          setError("Please complete the discovery process first to select subreddits before adding keywords.")
+        } else {
+          setError("Failed to add keyword. Please try again.")
+        }
+      }
     }
   }
 
-  const removeKeyword = (keyword: string) => {
-    setKeywords(keywords.filter((k) => k !== keyword))
+  const removeKeyword = async (keyword: string) => {
+    try {
+      // Try to remove from backend first
+      try {
+        await api.removeKeyword(keyword)
+      } catch (apiError) {
+        console.warn('Backend not available, removing from local store only:', apiError)
+      }
+      
+      // Remove from local state and store
+      const updatedKeywords = keywords.filter((k) => k !== keyword)
+      setKeywords(updatedKeywords)
+      storeRemoveKeyword(keyword)
+    } catch (error) {
+      console.error('Failed to remove keyword:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      if (errorMessage.includes('Monitoring not configured')) {
+        setError("Please complete the discovery process first to select subreddits before managing keywords.")
+      } else {
+        setError("Failed to remove keyword. Please try again.")
+      }
+    }
   }
 
   const openMentionModal = (mention: Mention) => {
@@ -124,20 +214,32 @@ export default function DashboardPage() {
     generateAIReply(mention)
   }
 
-  const generateAIReply = (mention: Mention) => {
-    // Mock AI reply generation
-    const replies = [
-      `Hi! I work at TechFlow Solutions and wanted to share some insights. Based on your needs for ${mention.matchedKeywords.join(" and ")}, you might find our platform helpful. We've specifically designed it for teams like yours who struggle with coordination. Would be happy to share more details if you're interested!`,
-      `Great question! As someone from TechFlow Solutions, I've seen many teams face similar challenges. Our platform addresses exactly what you're looking for with ${mention.matchedKeywords.join(" and ")}. Feel free to check it out or ask any questions!`,
-    ]
-    setAiReply(replies[Math.floor(Math.random() * replies.length)])
+  const generateAIReply = async (mention: Mention) => {
+    try {
+      const replyDraft = await api.generateReplyDraft(mention.id)
+      setAiReply(replyDraft.draft_text)
+      setComplianceScore(replyDraft.compliance.score)
+    } catch (error) {
+      console.error('Failed to generate AI reply:', error)
+      setAiReply("Failed to generate reply. Please try again.")
+    }
+  }
+
+  const formatTimeAgo = (timestamp: number): string => {
+    const now = Math.floor(Date.now() / 1000)
+    const diff = now - timestamp
+    
+    if (diff < 60) return `${diff}s`
+    if (diff < 3600) return `${Math.floor(diff / 60)}m`
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h`
+    return `${Math.floor(diff / 86400)}d`
   }
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "high":
         return "bg-red-500"
-      case "medium":
+      case "normal":
         return "bg-yellow-500"
       case "low":
         return "bg-green-500"
@@ -161,13 +263,77 @@ export default function DashboardPage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
+      case "new":
+        return <AlertCircle className="h-4 w-4 text-blue-500" />
       case "responded":
         return <CheckCircle className="h-4 w-4 text-green-500" />
       case "ignored":
         return <Eye className="h-4 w-4 text-gray-500" />
       default:
-        return <AlertCircle className="h-4 w-4 text-blue-500" />
+        return null
     }
+  }
+
+  // Refresh mentions
+  const refreshMentions = async () => {
+    try {
+      setIsRefreshing(true)
+      try {
+        const apiMentions = await api.getMentions()
+        addMentions(apiMentions)
+        
+        const convertedMentions: Mention[] = apiMentions.map(mention => ({
+          id: mention.id,
+          subreddit: mention.subreddit,
+          title: mention.title || "",
+          snippet: mention.snippet,
+          author: mention.author,
+          age: formatTimeAgo(mention.created_utc),
+          matchedKeywords: mention.matched_keywords,
+          priority: mention.priority,
+          sentiment: mention.sentiment || "neutral",
+          status: mention.status.toLowerCase() as "new" | "responded" | "ignored",
+          upvotes: 0,
+          comments: 0,
+          fullPost: mention.snippet,
+          topComments: [],
+        }))
+        
+        setLocalMentions(convertedMentions)
+      } catch (apiError) {
+        console.warn('Backend not available for refresh:', apiError)
+        setError("Backend not available. Using cached data.")
+      }
+    } catch (error) {
+      console.error('Failed to refresh mentions:', error)
+      setError("Failed to refresh mentions. Please try again.")
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
+
+  // Filter mentions based on search and status
+  const filteredMentions = localMentions.filter((mention: Mention) => {
+    const matchesSearch = !searchQuery || 
+      mention.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      mention.snippet.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    const matchesStatus = statusFilter === "all" || mention.status === statusFilter
+    
+    return matchesSearch && matchesStatus
+  })
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen">
+        <Navigation />
+        <div className="flex-1">
+          <div className="flex items-center justify-center h-64">
+            <p className="text-gray-600">Loading dashboard...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -180,29 +346,47 @@ export default function DashboardPage() {
             <div className="w-80 bg-white border-r border-gray-200 p-6">
               <h2 className="text-lg font-semibold mb-4">Tracked Keywords</h2>
 
-              <div className="space-y-2 mb-4">
-                {keywords.map((keyword) => (
-                  <div key={keyword} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                    <span className="text-sm">{keyword}</span>
-                    <Button variant="ghost" size="sm" onClick={() => removeKeyword(keyword)} className="h-6 w-6 p-0">
-                      <X className="h-3 w-3" />
+              {keywords.length === 0 ? (
+                <div className="text-center py-8">
+                  <MessageSquare className="h-8 w-8 text-gray-400 mx-auto mb-3" />
+                  <p className="text-sm text-gray-600 mb-4">
+                    No keywords configured yet. Complete the discovery process to start monitoring.
+                  </p>
+                  <Button 
+                    onClick={() => router.push("/discovery")} 
+                    size="sm"
+                    className="w-full"
+                  >
+                    Go to Discovery
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2 mb-4">
+                    {keywords.map((keyword) => (
+                      <div key={keyword} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <span className="text-sm">{keyword}</span>
+                        <Button variant="ghost" size="sm" onClick={() => removeKeyword(keyword)} className="h-6 w-6 p-0">
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Add keyword"
+                      value={newKeyword}
+                      onChange={(e) => setNewKeyword(e.target.value)}
+                      onKeyPress={(e) => e.key === "Enter" && addKeyword()}
+                      className="text-sm"
+                    />
+                    <Button onClick={addKeyword} size="sm">
+                      <Plus className="h-4 w-4" />
                     </Button>
                   </div>
-                ))}
-              </div>
-
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Add keyword"
-                  value={newKeyword}
-                  onChange={(e) => setNewKeyword(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && addKeyword()}
-                  className="text-sm"
-                />
-                <Button onClick={addKeyword} size="sm">
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
+                </>
+              )}
             </div>
 
             {/* Main Content */}
@@ -211,6 +395,13 @@ export default function DashboardPage() {
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">Reddit Monitoring Dashboard</h1>
                 <p className="text-gray-600">Track mentions and engage with your community</p>
               </div>
+
+              {/* Error Message */}
+              {error && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-red-600 text-sm">{error}</p>
+                </div>
+              )}
 
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="mb-6">
@@ -225,120 +416,209 @@ export default function DashboardPage() {
                 </TabsList>
 
                 <TabsContent value="mentions">
+                  {/* Search and Filter Bar */}
+                  <div className="mb-6 flex gap-4">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="Search mentions..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="max-w-md"
+                      />
+                    </div>
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="new">New</option>
+                      <option value="responded">Responded</option>
+                      <option value="ignored">Ignored</option>
+                    </select>
+                    <Button 
+                      onClick={refreshMentions} 
+                      variant="outline" 
+                      size="sm"
+                      disabled={isRefreshing}
+                      className="flex items-center gap-2"
+                    >
+                      <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                      Refresh
+                    </Button>
+                  </div>
+
                   <div className="space-y-4">
-                    {mentions.map((mention) => (
-                      <Card key={mention.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                        <CardContent className="p-6" onClick={() => openMentionModal(mention)}>
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex items-center gap-3">
-                              <Badge variant="outline">{mention.subreddit}</Badge>
-                              <span className="text-sm text-gray-500">{mention.age}</span>
-                              <div className={`w-2 h-2 rounded-full ${getPriorityColor(mention.priority)}`} />
-                              {getStatusIcon(mention.status)}
-                            </div>
-                            <Badge className={getSentimentColor(mention.sentiment)}>{mention.sentiment}</Badge>
-                          </div>
-
-                          <h3 className="font-semibold mb-2">{mention.title}</h3>
-                          <p className="text-gray-600 text-sm mb-3">{mention.snippet}</p>
-
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4 text-sm text-gray-500">
-                              <span className="flex items-center gap-1">
-                                <ThumbsUp className="h-4 w-4" />
-                                {mention.upvotes}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <MessageSquare className="h-4 w-4" />
-                                {mention.comments}
-                              </span>
-                            </div>
-                            <div className="flex gap-1">
-                              {mention.matchedKeywords.map((keyword) => (
-                                <Badge key={keyword} variant="secondary" className="text-xs">
-                                  {keyword}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
+                    {filteredMentions.length === 0 ? (
+                      <Card>
+                        <CardContent className="p-8 text-center">
+                          <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                          <h3 className="text-lg font-medium text-gray-900 mb-2">
+                            {localMentions.length === 0 ? "No mentions yet" : "No mentions match your filters"}
+                          </h3>
+                          <p className="text-gray-600 mb-4">
+                            {localMentions.length === 0 
+                              ? "We'll start showing mentions here once monitoring is active and we find relevant discussions."
+                              : "Try adjusting your search or filter criteria."
+                            }
+                          </p>
+                          {localMentions.length === 0 && (
+                            <Button 
+                              onClick={() => router.push("/discovery")} 
+                              size="sm"
+                            >
+                              Set Up Monitoring
+                            </Button>
+                          )}
                         </CardContent>
                       </Card>
-                    ))}
+                    ) : (
+                      filteredMentions.map((mention) => (
+                        <Card key={mention.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                          <CardContent className="p-6" onClick={() => openMentionModal(mention)}>
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex items-center gap-3">
+                                <Badge variant="outline">{mention.subreddit}</Badge>
+                                <span className="text-sm text-gray-500">{mention.age}</span>
+                                <div className={`w-2 h-2 rounded-full ${getPriorityColor(mention.priority)}`} />
+                                {getStatusIcon(mention.status)}
+                              </div>
+                              <Badge className={getSentimentColor(mention.sentiment)}>{mention.sentiment}</Badge>
+                            </div>
+
+                            <h3 className="font-semibold mb-2">{mention.title}</h3>
+                            <p className="text-gray-600 text-sm mb-3">{mention.snippet}</p>
+
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4 text-sm text-gray-500">
+                                <span className="flex items-center gap-1">
+                                  <ThumbsUp className="h-4 w-4" />
+                                  {mention.upvotes}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <MessageSquare className="h-4 w-4" />
+                                  {mention.comments}
+                                </span>
+                              </div>
+                              <div className="flex gap-1">
+                                {mention.matchedKeywords.map((keyword) => (
+                                  <Badge key={keyword} variant="secondary" className="text-xs">
+                                    {keyword}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    )}
                   </div>
                 </TabsContent>
 
                 <TabsContent value="analytics">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium">Total Mentions</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">127</div>
-                        <p className="text-xs text-gray-500">+12% from last week</p>
-                      </CardContent>
-                    </Card>
+                  {storeAnalytics ? (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <Card>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium">Total Mentions</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold">{storeAnalytics.mention_totals}</div>
+                            <p className="text-xs text-gray-500">All time mentions</p>
+                          </CardContent>
+                        </Card>
 
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium">Response Rate</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">68%</div>
-                        <p className="text-xs text-gray-500">+5% from last week</p>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium">Avg Response Time</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">2.4h</div>
-                        <p className="text-xs text-gray-500">-0.3h from last week</p>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Top Subreddits</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          {["r/entrepreneur", "r/SaaS", "r/startups", "r/productivity"].map((sub, index) => (
-                            <div key={sub} className="flex justify-between items-center">
-                              <span className="text-sm">{sub}</span>
-                              <Badge variant="secondary">{[45, 32, 28, 22][index]}</Badge>
+                        <Card>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium">Response Rate</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold">
+                              {storeAnalytics.mention_totals > 0 
+                                ? Math.round((storeAnalytics.responded_count / storeAnalytics.mention_totals) * 100)
+                                : 0}%
                             </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
+                            <p className="text-xs text-gray-500">
+                              {storeAnalytics.responded_count} of {storeAnalytics.mention_totals} responded
+                            </p>
+                          </CardContent>
+                        </Card>
 
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Sentiment Distribution</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm">Positive</span>
-                            <Badge className="bg-green-100 text-green-800">42</Badge>
+                        <Card>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium">Avg Response Time</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold">
+                              {storeAnalytics.avg_response_minutes > 0 
+                                ? `${Math.round(storeAnalytics.avg_response_minutes)}m`
+                                : 'N/A'}
+                            </div>
+                            <p className="text-xs text-gray-500">Average response time</p>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-center h-64">
+                      <p className="text-gray-600">Loading analytics...</p>
+                    </div>
+                  )}
+
+                  {storeAnalytics && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Top Subreddits</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            {storeAnalytics.by_subreddit.length > 0 ? (
+                              storeAnalytics.by_subreddit.map((sub) => (
+                                <div key={sub.name} className="flex justify-between items-center">
+                                  <span className="text-sm">{sub.name}</span>
+                                  <Badge variant="secondary">{sub.count}</Badge>
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-sm text-gray-500 text-center py-4">
+                                No mentions yet
+                              </p>
+                            )}
                           </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm">Neutral</span>
-                            <Badge className="bg-gray-100 text-gray-800">65</Badge>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Sentiment Distribution</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm">Positive</span>
+                              <Badge className="bg-green-100 text-green-800">
+                                {storeAnalytics.by_sentiment.positive}
+                              </Badge>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm">Neutral</span>
+                              <Badge className="bg-gray-100 text-gray-800">
+                                {storeAnalytics.by_sentiment.neutral}
+                              </Badge>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm">Negative</span>
+                              <Badge className="bg-red-100 text-red-800">
+                                {storeAnalytics.by_sentiment.negative}
+                              </Badge>
+                            </div>
                           </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm">Negative</span>
-                            <Badge className="bg-red-100 text-red-800">20</Badge>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
                 </TabsContent>
               </Tabs>
             </div>
