@@ -213,4 +213,4 @@ class RedditService:
             return "neutral"
 
 # Global instance
-reddit_service = RedditService() 
+reddit_service = RedditService()

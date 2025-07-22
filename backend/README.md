@@ -28,37 +28,37 @@ A FastAPI-based backend service for Reddit monitoring and engagement automation.
 ## 🔧 Installation
 
 1. **Clone the repository and navigate to backend:**
-   ```bash
+   \`\`\`bash
    cd backend
-   ```
+   \`\`\`
 
 2. **Create and activate virtual environment:**
-   ```bash
+   \`\`\`bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+   \`\`\`
 
 3. **Install dependencies:**
-   ```bash
+   \`\`\`bash
    pip install -r requirements.txt
-   ```
+   \`\`\`
 
 4. **Set up environment variables:**
    Create a `.env` file in the backend directory:
-   ```env
+   \`\`\`env
    REDDIT_CLIENT_ID=your_reddit_client_id
    REDDIT_CLIENT_SECRET=your_reddit_client_secret
    REDDIT_USER_AGENT=your_app_name/1.0
    REDDIT_USERNAME=your_reddit_username
    REDDIT_PASSWORD=your_reddit_password
-   ```
+   \`\`\`
 
 ## 🚀 Running the Server
 
 1. **Start the development server:**
-   ```bash
+   \`\`\`bash
    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-   ```
+   \`\`\`
 
 2. **Access the API documentation:**
    - Swagger UI: http://localhost:8000/docs
@@ -102,7 +102,7 @@ The backend includes a monitoring poller that:
 
 ## 🏗️ Project Structure
 
-```
+\`\`\`
 backend/
 ├── app/
 │   ├── main.py              # FastAPI application entry point
@@ -120,14 +120,14 @@ backend/
 │       └── storage.py       # In-memory storage
 ├── requirements.txt         # Python dependencies
 └── README.md               # This file
-```
+\`\`\`
 
 ## 🧪 Testing
 
 ### Manual API Testing
 
 1. **Set up brand context:**
-   ```bash
+   \`\`\`bash
    curl -X POST http://localhost:8000/brand/context \
      -H "Content-Type: application/json" \
      -d '{
@@ -135,30 +135,30 @@ backend/
        "one_line": "Your brand description",
        "keywords": ["keyword1", "keyword2"]
      }'
-   ```
+   \`\`\`
 
 2. **Discover subreddits:**
-   ```bash
+   \`\`\`bash
    curl -X POST http://localhost:8000/subreddits/discover \
      -H "Content-Type: application/json" \
      -d '{"keywords": ["python", "programming"]}'
-   ```
+   \`\`\`
 
 3. **Start monitoring:**
-   ```bash
+   \`\`\`bash
    curl -X POST http://localhost:8000/monitor/config \
      -H "Content-Type: application/json" \
      -d '{
        "subreddits": ["r/Python", "r/programming"],
        "keywords": ["python", "programming"]
      }'
-   ```
+   \`\`\`
 
 ### Health Check
 
-```bash
+\`\`\`bash
 curl http://localhost:8000/health
-```
+\`\`\`
 
 ## 🔒 Security Notes
 
@@ -229,4 +229,4 @@ This project is part of the RedditPro AI application. See the main project READM
 
 ---
 
-**Note**: This is an MVP version designed for rapid prototyping and demonstration. For production use, implement proper authentication, database storage, and security measures. 
+**Note**: This is an MVP version designed for rapid prototyping and demonstration. For production use, implement proper authentication, database storage, and security measures.

@@ -221,4 +221,4 @@ export const convertLocalToBrandContext = (data: BrandData): Partial<BrandContex
   prohibited: data.prohibitedTopics.split(',').map(s => s.trim()).filter(s => s),
   keywords: data.keywords,
   disclosure_template: data.disclosure,
-}) 
+})

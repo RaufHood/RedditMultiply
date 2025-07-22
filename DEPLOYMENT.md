@@ -3,11 +3,11 @@
 ## Quick Deploy (5 minutes!)
 
 ### 1. **Commit and Push Your Code**
-```bash
+\`\`\`bash
 git add .
 git commit -m "Add Vercel deployment configuration"
 git push origin main
-```
+\`\`\`
 
 ### 2. **Deploy on Vercel**
 1. Go to [vercel.com](https://vercel.com) and sign in with GitHub
@@ -21,13 +21,13 @@ After deployment, go to your Vercel dashboard:
 1. Click your project → **"Settings"** → **"Environment Variables"**
 2. Add these variables:
 
-```
+\`\`\`
 REDDIT_CLIENT_ID=your_reddit_client_id
 REDDIT_CLIENT_SECRET=your_reddit_client_secret  
 REDDIT_USER_AGENT=your_reddit_username
 OPENAI_API_KEY=your_openai_api_key
 OPENAI_MODEL=gpt-4o-mini
-```
+\`\`\`
 
 ### 4. **Redeploy**
 After adding environment variables:
@@ -48,7 +48,7 @@ After adding environment variables:
 - **Production**: `https://your-app.vercel.app/api/...`
 
 ### File Structure
-```
+\`\`\`
 RedditMultiply/
 ├── api/
 │   └── index.py          # Vercel entry point
@@ -56,7 +56,7 @@ RedditMultiply/
 ├── app/                  # Next.js frontend  
 ├── vercel.json          # Vercel configuration
 └── requirements.txt     # Python dependencies
-```
+\`\`\`
 
 ## 🆓 **Vercel Free Tier Limits**
 - ✅ **Serverless Functions**: 100GB-hours/month

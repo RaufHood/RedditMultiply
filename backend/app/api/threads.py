@@ -115,4 +115,4 @@ def detect_simple_sentiment(text: str) -> str:
     elif positive_count > negative_count:
         return "positive"
     else:
-        return "neutral" 
+        return "neutral"

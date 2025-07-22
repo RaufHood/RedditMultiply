@@ -51,7 +51,7 @@
 
 ## 4. Data Model (JSON / In-Memory)
 
-```jsonc
+\`\`\`jsonc
 BrandContext {
   "brandName": "string",
   "oneLine": "string",
@@ -108,7 +108,7 @@ AnalyticsSnapshot {
   "respondedCount": number,
   "avgResponseMinutes": number
 }
-```
+\`\`\`
 
 ---
 
@@ -190,9 +190,9 @@ AnalyticsSnapshot {
 **Interactions:** Real-time update of aggregated keyword list; Next/Back navigation; Finish triggers subreddit discovery & navigates to Discovery page.
 **Lovable Build Prompt:**
 
-```text
+\`\`\`text
 Build an Onboarding Wizard with 4 steps: (1) Brand Basics (fields: Brand Name [text], One Liner [textarea], Products [tags input]). (2) Target & Value (Target Users [tags], Value Propositions [tags], Tone Selector [pill buttons: Casual, Neutral, Formal]). (3) Market Context (Competitors [tags], Prohibited Topics [tags optional]). (4) Keywords Review (Editable Keywords [multi-tag], Disclosure Template [readonly textarea], Generate Button). Sidebar shows dynamic Keyword Preview list updating as user types. Use clean cards, next/back buttons, disable next until required fields filled. On Finish call `POST /discover_subreddits` with keywords payload then route to Discovery page.
-```
+\`\`\`
 
 ### Page B. Subreddit Discovery & Selection
 
@@ -200,9 +200,9 @@ Build an Onboarding Wizard with 4 steps: (1) Brand Basics (fields: Brand Name [t
 **Components:** Search bar (add manual), table/grid of subreddit cards (name, members, relevance score bar, activity score, checkbox), Selected list sidebar, "Start Monitoring" button.
 **Lovable Build Prompt:**
 
-```text
+\`\`\`text
 Create a Subreddit Discovery page. Top search input for manual subreddit search (enter keyword -> call `/search_subreddits?query=`). Below, show a responsive grid of cards each with: Subreddit Name (r/xxx), Member Count, Relevance Score (horizontal bar), Activity (posts/day), Select checkbox. Right side sticky panel: Selected Subreddits list with remove icons and count. Button 'Start Monitoring' disabled until >=1 selected; clicking calls `POST /monitor/config` with selected list then navigates to Dashboard.
-```
+\`\`\`
 
 ### Page C. Dashboard (Mentions & Analytics)
 
@@ -213,9 +213,9 @@ Create a Subreddit Discovery page. Top search input for manual subreddit search 
 **Analytics Tab Components:** Simple stat cards (Total Mentions, Responded %, Avg Response Time), bar list (Top Subreddits), donut or simple bar for Sentiment (ok to placeholder text list for MVP), table of keyword counts.
 **Lovable Build Prompt:**
 
-```text
+\`\`\`text
 Build a Dashboard with two main tabs: Mentions and Analytics. Left side vertical panel: Tracked Keywords list (each chip removable), Add Keyword input (on enter call `POST /keywords`). Mentions Tab: Top filter bar (Text filter, Priority Only toggle, Status dropdown [All/New/Responded/Ignored], Refresh button). Below, scrollable list of Mention Cards: show subreddit (badge), snippet/title, age (e.g. '12m'), matched keywords (chips), sentiment pill (blank if null), status dropdown. Clicking a card opens a modal (Thread Detail). Analytics Tab: 3 metric cards (Total Mentions, Responded %, Avg Response Time), section 'Top Subreddits' listing top 5 with counts, section 'Sentiment Split' listing counts per sentiment, section 'Keyword Volume' table (keyword, count). Clean minimal styling.
-```
+\`\`\`
 
 ### Page D. Thread Detail Modal
 
@@ -223,9 +223,9 @@ Build a Dashboard with two main tabs: Mentions and Analytics. Left side vertical
 **Components:** Header (Subreddit, Age, Link to Reddit), Original Post snippet, Collapsible Top Comments preview (first 5), Summary box (AI output with sections), Sentiment badges, Action buttons: \[Draft Reply] \[Mark Responded] \[Ignore]. Reply Draft area appears after generation: text editor, Compliance panel (score + issues list), Buttons \[Copy Reply] \[Regenerate].
 **Lovable Build Prompt:**
 
-```text
+\`\`\`text
 Create a Thread Detail modal. Sections: Header (subreddit badge, age, external link icon opens original URL). Original Content card (title + body snippet). Top Comments accordion (list first 5). Summary card with headings: Overview, Main Points (bullets), Opportunities, Risks, Sentiment. Action bar buttons: Draft Reply, Mark Responded, Ignore. When Draft Reply clicked call `POST /reply/draft?mentionId=`; show loading skeleton then a Reply Editor (textarea) + Compliance Panel (score badge large, issues list with severity). Provide buttons: Copy Reply (copies textarea), Regenerate Draft (calls same endpoint with `?regen=1`). If Mark Responded clicked, call `POST /mention/status` update and close modal.
-```
+\`\`\`
 
 ### Page E. Settings Side Panel (Slide-over)
 
@@ -233,9 +233,9 @@ Create a Thread Detail modal. Sections: Header (subreddit badge, age, external l
 **Components:** Toggleable drawer with fields: Tone Selector, Edit Disclosure Template, Value Props tags, Competitors tags, Prohibited tags. Save button re-validates & persists.
 **Lovable Build Prompt:**
 
-```text
+\`\`\`text
 Add a slide-over Settings panel accessible via gear icon. Fields: Tone (pill buttons), Disclosure Template (textarea), Value Props (tags), Competitors (tags), Prohibited Topics (tags). Save button calls `POST /brand_context` and closes panel. Provide subtle helper text under Disclosure Template reminding user to keep transparent.
-```
+\`\`\`
 
 ---
 

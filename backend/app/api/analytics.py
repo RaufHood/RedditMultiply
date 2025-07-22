@@ -53,4 +53,4 @@ async def get_analytics():
         by_subreddit=by_subreddit,
         responded_count=responded_count,
         avg_response_minutes=avg_response_minutes
-    ) 
+    )

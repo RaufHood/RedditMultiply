@@ -86,4 +86,4 @@ class AddKeywordRequest(BaseModel):
 
 class DraftReplyRequest(BaseModel):
     mention_id: str
-    regen: Optional[bool] = False 
+    regen: Optional[bool] = False

@@ -39,4 +39,4 @@ async def get_brand_context():
     context = storage.get_brand_context()
     if not context:
         raise HTTPException(status_code=404, detail="Brand context not found. Please complete onboarding first.")
-    return context 
+    return context

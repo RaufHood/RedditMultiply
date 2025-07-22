@@ -29,4 +29,4 @@ async def search_subreddits(query: str = Query(..., description="Search query fo
         return subreddits
     
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error searching subreddits: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"Error searching subreddits: {str(e)}")

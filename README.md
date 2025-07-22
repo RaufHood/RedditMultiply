@@ -32,36 +32,36 @@ This frontend provides a user-friendly interface for:
 ## 🔧 Installation
 
 1. **Navigate to the frontend directory:**
-   ```bash
+   \`\`\`bash
    cd RedditMultiply
-   ```
+   \`\`\`
 
 2. **Install dependencies:**
-   ```bash
+   \`\`\`bash
    npm install
    # or
    yarn install
-   ```
+   \`\`\`
 
 3. **Set up environment variables:**
    Create a `.env.local` file:
-   ```env
+   \`\`\`env
    NEXT_PUBLIC_API_URL=http://localhost:8000
-   ```
+   \`\`\`
 
 4. **Start the development server:**
-   ```bash
+   \`\`\`bash
    npm run dev
    # or
    yarn dev
-   ```
+   \`\`\`
 
 5. **Open your browser:**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
 ## 🏗️ Project Structure
 
-```
+\`\`\`
 RedditMultiply/
 ├── app/                    # Next.js app directory
 │   ├── page.tsx           # Landing page
@@ -82,7 +82,7 @@ RedditMultiply/
 ├── hooks/               # Custom React hooks
 ├── public/              # Static assets
 └── styles/              # Additional styles
-```
+\`\`\`
 
 ## 🎮 Key Features
 
@@ -120,7 +120,7 @@ RedditMultiply/
 
 ### Environment Variables
 
-```env
+\`\`\`env
 # API Configuration
 NEXT_PUBLIC_API_URL=http://localhost:8000
 
@@ -129,36 +129,36 @@ NEXT_PUBLIC_ANALYTICS_ID=your_analytics_id
 
 # Optional: Feature flags
 NEXT_PUBLIC_ENABLE_AI_FEATURES=true
-```
+\`\`\`
 
 ### API Configuration
 
 The frontend connects to the backend API through the `lib/api.ts` service:
 
-```typescript
+\`\`\`typescript
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-```
+\`\`\`
 
 ## 🧪 Development
 
 ### Available Scripts
 
-```bash
+\`\`\`bash
 # Development
 npm run dev          # Start development server
 npm run build        # Build for production
 npm run start        # Start production server
 npm run lint         # Run ESLint
 npm run type-check   # Run TypeScript checks
-```
+\`\`\`
 
 ### Component Development
 
 The project uses shadcn/ui components. To add new components:
 
-```bash
+\`\`\`bash
 npx shadcn@latest add [component-name]
-```
+\`\`\`
 
 ### Styling Guidelines
 

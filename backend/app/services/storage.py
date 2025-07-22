@@ -70,4 +70,4 @@ class InMemoryStorage:
         return self.monitoring_active
 
 # Global storage instance
-storage = InMemoryStorage() 
+storage = InMemoryStorage()

@@ -175,4 +175,4 @@ def check_basic_compliance(draft_text: str, brand_context) -> dict:
     return {
         "issues": issues,
         "score": max(0, score)
-    } 
+    }
