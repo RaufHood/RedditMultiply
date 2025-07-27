@@ -17,6 +17,10 @@ import {
   ChevronRight,
   Zap,
   Brain,
+  Target,
+  Heart,
+  TrendingUp,
+  ChevronDown,
 } from "lucide-react"
 
 interface NavItem {
@@ -25,6 +29,7 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>
   badge?: string
   description?: string
+  subpages?: NavItem[]
 }
 
 const navItems: NavItem[] = [
@@ -52,6 +57,32 @@ const navItems: NavItem[] = [
     href: "/knowledge-base-2",
     icon: Brain,
     description: "Clean knowledge base interface",
+    subpages: [
+      {
+        title: "Competitor Analysis",
+        href: "/knowledge-base-2/competitor-analysis",
+        icon: Target,
+        description: "Track competitor insights",
+      },
+      {
+        title: "Customer Sentiment",
+        href: "/knowledge-base-2/customer-sentiment",
+        icon: Heart,
+        description: "Monitor customer feedback",
+      },
+      {
+        title: "Market Trends",
+        href: "/knowledge-base-2/market-trends",
+        icon: TrendingUp,
+        description: "Analyze market developments",
+      },
+      {
+        title: "Product Intelligence",
+        href: "/knowledge-base-2/product-intelligence",
+        icon: Search,
+        description: "Product insights and feedback",
+      },
+    ],
   },
 ]
 
@@ -72,7 +103,17 @@ const bottomNavItems: NavItem[] = [
 
 export function Navigation() {
   const [collapsed, setCollapsed] = useState(false)
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({
+    "Knowledge Base 2": true
+  })
   const pathname = usePathname()
+
+  const toggleExpanded = (itemTitle: string) => {
+    setExpandedItems(prev => ({
+      ...prev,
+      [itemTitle]: !prev[itemTitle]
+    }))
+  }
 
   return (
     <div
@@ -106,29 +147,95 @@ export function Navigation() {
         <nav className="space-y-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href.split('?')[0])
+            const hasSubpages = item.subpages && item.subpages.length > 0
+            const isExpanded = expandedItems[item.title]
+            const hasActiveSubpage = hasSubpages && item.subpages!.some(subpage => pathname === subpage.href)
+            
             return (
-              <Link key={`${item.title}-${item.href}`} href={item.href}>
-                <div
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-blue-50 text-blue-700 border border-blue-200"
-                      : "text-gray-700 hover:bg-gray-50 hover:text-gray-900",
-                  )}
-                >
-                  <item.icon className={cn("h-5 w-5 flex-shrink-0", isActive ? "text-blue-700" : "text-gray-400")} />
-                  {!collapsed && (
-                    <>
-                      <span className="flex-1">{item.title}</span>
-                      {item.badge && (
-                        <Badge variant="secondary" className="h-5 px-2 text-xs">
-                          {item.badge}
-                        </Badge>
+              <div key={`${item.title}-${item.href}`}>
+                {/* Main Navigation Item */}
+                {hasSubpages ? (
+                  <div
+                    className={cn(
+                      "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer",
+                      isActive || hasActiveSubpage
+                        ? "bg-blue-50 text-blue-700 border border-blue-200"
+                        : "text-gray-700 hover:bg-gray-50 hover:text-gray-900",
+                    )}
+                    onClick={() => toggleExpanded(item.title)}
+                  >
+                    <item.icon className={cn("h-5 w-5 flex-shrink-0", isActive || hasActiveSubpage ? "text-blue-700" : "text-gray-400")} />
+                    {!collapsed && (
+                      <>
+                        <span className="flex-1">{item.title}</span>
+                        {item.badge && (
+                          <Badge variant="secondary" className="h-5 px-2 text-xs">
+                            {item.badge}
+                          </Badge>
+                        )}
+                        <ChevronDown 
+                          className={cn(
+                            "h-4 w-4 transition-transform", 
+                            isExpanded ? "rotate-180" : ""
+                          )} 
+                        />
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <Link href={item.href}>
+                    <div
+                      className={cn(
+                        "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                        isActive
+                          ? "bg-blue-50 text-blue-700 border border-blue-200"
+                          : "text-gray-700 hover:bg-gray-50 hover:text-gray-900",
                       )}
-                    </>
-                  )}
-                </div>
-              </Link>
+                    >
+                      <item.icon className={cn("h-5 w-5 flex-shrink-0", isActive ? "text-blue-700" : "text-gray-400")} />
+                      {!collapsed && (
+                        <>
+                          <span className="flex-1">{item.title}</span>
+                          {item.badge && (
+                            <Badge variant="secondary" className="h-5 px-2 text-xs">
+                              {item.badge}
+                            </Badge>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </Link>
+                )}
+                
+                {/* Subpages */}
+                {hasSubpages && isExpanded && !collapsed && (
+                  <div className="ml-4 mt-1 space-y-1">
+                    {item.subpages!.map((subpage) => {
+                      const isSubpageActive = pathname === subpage.href
+                      return (
+                        <Link key={`${subpage.title}-${subpage.href}`} href={subpage.href}>
+                          <div
+                            className={cn(
+                              "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm transition-colors",
+                              isSubpageActive
+                                ? "bg-blue-100 text-blue-800 border border-blue-300"
+                                : "text-gray-600 hover:bg-gray-100 hover:text-gray-800",
+                            )}
+                          >
+                            <subpage.icon className={cn("h-4 w-4 flex-shrink-0", isSubpageActive ? "text-blue-800" : "text-gray-400")} />
+                            <span className="flex-1">{subpage.title}</span>
+                            {subpage.badge && (
+                              <Badge variant="secondary" className="h-4 px-1 text-xs">
+                                {subpage.badge}
+                              </Badge>
+                            )}
+                          </div>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
             )
           })}
         </nav>
