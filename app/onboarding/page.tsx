@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -18,13 +18,20 @@ const steps = [
   { title: "Brand Basics", description: "Tell us about your brand" },
   { title: "Target & Value", description: "Who you serve and why" },
   { title: "Voice & Competitors", description: "Your tone and competition" },
-  { title: "Keywords & Disclosure", description: "What to monitor and how to identify" },
 ]
 
 export default function OnboardingPage() {
   const router = useRouter()
-  const { setBrandContext, setLoading, setError, error, isLoading } = useAppStore()
+  const { brandContext, setBrandContext, setLoading, setError, error, isLoading } = useAppStore()
   const [currentStep, setCurrentStep] = useState(0)
+
+  // Check if onboarding is already completed
+  useEffect(() => {
+    if (brandContext && brandContext.brand_name && brandContext.competitors && brandContext.competitors.length > 0) {
+      // User has already completed onboarding, redirect to discovery
+      router.push("/discovery")
+    }
+  }, [brandContext, router])
   const [brandData, setBrandData] = useState<Partial<BrandContext>>({
     brand_name: "",
     one_line: "",
@@ -32,64 +39,21 @@ export default function OnboardingPage() {
     target_users: [],
     value_props: [],
     tone: { formality: "neutral", voice_keywords: [] },
-    keywords: [],
+    keywords: [], // Will be set in discovery
     competitors: [],
     prohibited: [],
-    disclosure_template: "",
+    disclosure_template: "", // Will be set in discovery
   })
-
-  const [newKeyword, setNewKeyword] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const updateBrandData = (field: keyof BrandContext, value: any) => {
     setBrandData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const addKeyword = () => {
-    if (newKeyword.trim() && !brandData.keywords?.includes(newKeyword.trim())) {
-      setBrandData((prev) => ({
-        ...prev,
-        keywords: [...(prev.keywords || []), newKeyword.trim()],
-      }))
-      setNewKeyword("")
-    }
-  }
-
-  const removeKeyword = (keyword: string) => {
-    setBrandData((prev) => ({
-      ...prev,
-      keywords: prev.keywords?.filter((k) => k !== keyword) || [],
-    }))
-  }
-
-  const generateKeywords = () => {
-    // Auto-generate keywords based on brand data
-    const generated = [
-      brandData.brand_name?.toLowerCase(),
-      ...(brandData.products || []).map((p) => p.toLowerCase()),
-      ...(brandData.value_props || []).map((v) => v.toLowerCase()),
-      "customer support",
-      "alternatives",
-      "reviews",
-    ].filter((k) => k && k.length > 2) as string[]
-
-    setBrandData((prev) => ({
-      ...prev,
-      keywords: [...new Set([...(prev.keywords || []), ...generated])],
-    }))
-  }
 
   const nextStep = async () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1)
-      if (currentStep === 2) {
-        // Auto-generate keywords when moving to step 4
-        generateKeywords()
-        setBrandData((prev) => ({
-          ...prev,
-          disclosure_template: `I work at ${prev.brand_name} and wanted to share some insights.`,
-        }))
-      }
     } else {
       // Save brand context and move to discovery
       try {
@@ -144,8 +108,6 @@ export default function OnboardingPage() {
         return brandData.products && brandData.products.length > 0 && brandData.target_users && brandData.target_users.length > 0 && brandData.value_props && brandData.value_props.length > 0
       case 2:
         return brandData.tone && brandData.tone.formality && brandData.competitors && brandData.competitors.length > 0
-      case 3:
-        return brandData.keywords && brandData.keywords.length > 0 && brandData.disclosure_template
       default:
         return false
     }
@@ -283,53 +245,6 @@ export default function OnboardingPage() {
                 </>
               )}
 
-              {currentStep === 3 && (
-                <>
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Auto-generated Keywords</Label>
-                      <p className="text-sm text-gray-600 mb-3">
-                        Based on your brand info, we've generated these keywords to monitor:
-                      </p>
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {brandData.keywords?.map((keyword) => (
-                          <Badge key={keyword} variant="secondary" className="flex items-center gap-1">
-                            {keyword}
-                            <X
-                              className="h-3 w-3 cursor-pointer hover:text-red-500"
-                              onClick={() => removeKeyword(keyword)}
-                            />
-                          </Badge>
-                        ))}
-                      </div>
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Add custom keyword"
-                          value={newKeyword}
-                          onChange={(e) => setNewKeyword(e.target.value)}
-                          onKeyPress={(e) => e.key === "Enter" && addKeyword()}
-                        />
-                        <Button onClick={addKeyword} size="sm">
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="disclosure">Disclosure Statement *</Label>
-                      <Textarea
-                        id="disclosure"
-                        placeholder="How you'll identify yourself when engaging"
-                        value={brandData.disclosure_template || ""}
-                        onChange={(e) => updateBrandData("disclosure_template", e.target.value)}
-                      />
-                      <p className="text-xs text-gray-500">
-                        This will be included in your replies to maintain transparency
-                      </p>
-                    </div>
-                  </div>
-                </>
-              )}
             </CardContent>
           </Card>
 
@@ -346,7 +261,7 @@ export default function OnboardingPage() {
               Previous
             </Button>
             <Button onClick={nextStep} disabled={!canProceed() || isSubmitting} className="flex items-center gap-2">
-              {isSubmitting ? "Saving..." : currentStep === steps.length - 1 ? "Find Subreddits" : "Next"}
+              {isSubmitting ? "Saving..." : currentStep === steps.length - 1 ? "Continue to Discovery" : "Next"}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
