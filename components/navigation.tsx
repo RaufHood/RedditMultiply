@@ -47,6 +47,12 @@ const navItems: NavItem[] = [
     icon: Brain,
     description: "Organized business insights",
   },
+  {
+    title: "Knowledge Base 2",
+    href: "/knowledge-base-2",
+    icon: Brain,
+    description: "Clean knowledge base interface",
+  },
 ]
 
 const bottomNavItems: NavItem[] = [
