@@ -12,8 +12,6 @@ import {
   Settings,
   MessageSquare,
   Search,
-  Users,
-  Bell,
   HelpCircle,
   ChevronLeft,
   ChevronRight,
@@ -49,19 +47,6 @@ const navItems: NavItem[] = [
     icon: Brain,
     description: "Organized business insights",
   },
-  {
-    title: "Communities",
-    href: "/communities",
-    icon: Users,
-    description: "Monitored subreddits",
-  },
-  {
-    title: "Notifications",
-    href: "/notifications",
-    icon: Bell,
-    badge: "3",
-    description: "Alerts and updates",
-  },
 ]
 
 const bottomNavItems: NavItem[] = [
@@ -86,7 +71,7 @@ export function Navigation() {
   return (
     <div
       className={cn(
-        "flex flex-col bg-white border-r border-gray-200 transition-all duration-300",
+        "flex flex-col bg-white border-r border-gray-200 transition-all duration-300 h-screen sticky top-0",
         collapsed ? "w-16" : "w-64",
       )}
     >
