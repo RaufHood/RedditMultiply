@@ -19,14 +19,15 @@ interface Subreddit extends SubredditProfile {
 
 export default function DiscoveryPage() {
   const router = useRouter()
-  const { brandContext, setBrandContext, setMonitoringConfig, setLoading, setError, error, isLoading } = useAppStore()
+  const { brandContext, setBrandContext, monitoringConfig, setMonitoringConfig, setLoading, setError, error, isLoading } = useAppStore()
   const [subreddits, setSubreddits] = useState<Subreddit[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [keywords, setKeywords] = useState<string[]>([])
   const [newKeyword, setNewKeyword] = useState("")
   const [isDiscovering, setIsDiscovering] = useState(false)
+  const [discoveredSubreddits, setDiscoveredSubreddits] = useState<SubredditProfile[]>([]) // Store discovered subreddits
 
-  // Load existing keywords on component mount
+  // Load existing keywords and discovered subreddits on component mount
   useEffect(() => {
     if (brandContext?.keywords && brandContext.keywords.length > 0) {
       setKeywords(brandContext.keywords)
@@ -34,7 +35,26 @@ export default function DiscoveryPage() {
       // Generate suggested keywords from brand context
       generateSuggestedKeywords()
     }
-  }, [brandContext])
+
+    // Load previously discovered subreddits from localStorage
+    const savedSubreddits = localStorage.getItem('discoveredSubreddits')
+    if (savedSubreddits) {
+      try {
+        const parsed = JSON.parse(savedSubreddits)
+        setDiscoveredSubreddits(parsed)
+        
+        // Convert to our interface format with selected state
+        const formattedSubreddits: Subreddit[] = parsed.map((sub: SubredditProfile) => ({
+          ...sub,
+          selected: monitoringConfig?.subreddits?.includes(sub.name) || false
+        }))
+        
+        setSubreddits(formattedSubreddits)
+      } catch (error) {
+        console.error('Error parsing saved subreddits:', error)
+      }
+    }
+  }, [brandContext, monitoringConfig])
 
   const generateSuggestedKeywords = () => {
     if (!brandContext) return
@@ -109,6 +129,10 @@ export default function DiscoveryPage() {
         }))
         
         setSubreddits(formattedSubreddits)
+        setDiscoveredSubreddits(discoveredSubreddits)
+        
+        // Save to localStorage for persistence
+        localStorage.setItem('discoveredSubreddits', JSON.stringify(discoveredSubreddits))
       } catch (apiError) {
         console.warn('Backend not available for subreddit discovery:', apiError)
         setError('Backend not available. Please try again later.')

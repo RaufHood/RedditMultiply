@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
-import { Plus, X, MessageSquare, ThumbsUp, AlertCircle, CheckCircle, Eye, BarChart3, RefreshCw } from "lucide-react"
+import { Plus, X, MessageSquare, ThumbsUp, AlertCircle, CheckCircle, Eye, BarChart3, RefreshCw, Users, Search, Settings } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import { api, Mention as ApiMention, BrandContext, AnalyticsSnapshot } from "@/lib/api"
 import { useAppStore } from "@/lib/store"
@@ -345,67 +345,90 @@ export default function DashboardPage() {
       <Navigation />
       <div className="flex-1">
         <div className="min-h-screen bg-gray-50">
-          <div className="flex">
-            {/* Left Sidebar - existing keyword sidebar */}
-            <div className="w-80 bg-white border-r border-gray-200 p-6">
-              <h2 className="text-lg font-semibold mb-4">Tracked Keywords</h2>
-
-              {keywords.length === 0 ? (
-                <div className="text-center py-8">
-                  <MessageSquare className="h-8 w-8 text-gray-400 mx-auto mb-3" />
-                  <p className="text-sm text-gray-600 mb-4">
-                    No keywords configured yet. Complete the discovery process to start monitoring.
-                  </p>
-                  <Button 
-                    onClick={() => router.push("/discovery")} 
-                    size="sm"
-                    className="w-full"
-                  >
-                    Go to Discovery
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <div className="space-y-2 mb-4">
-                    {keywords.map((keyword) => (
-                      <div key={keyword} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                        <span className="text-sm">{keyword}</span>
-                        <Button variant="ghost" size="sm" onClick={() => removeKeyword(keyword)} className="h-6 w-6 p-0">
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Add keyword"
-                      value={newKeyword}
-                      onChange={(e) => setNewKeyword(e.target.value)}
-                      onKeyPress={(e) => e.key === "Enter" && addKeyword()}
-                      className="text-sm"
-                    />
-                    <Button onClick={addKeyword} size="sm">
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </>
-              )}
+          <div className="p-6">
+            {/* Header */}
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Reddit Monitoring Dashboard</h1>
+              <p className="text-gray-600">Track mentions and engage with your community</p>
             </div>
 
-            {/* Main Content */}
-            <div className="flex-1 p-6">
-              <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">Reddit Monitoring Dashboard</h1>
-                <p className="text-gray-600">Track mentions and engage with your community</p>
-              </div>
+            {/* Tracked Subreddits Display */}
+            <Card className="mb-6 border-2 border-green-100 bg-gradient-to-br from-green-50 via-white to-blue-50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-green-600" />
+                  Monitored Communities
+                </CardTitle>
+                <CardDescription>
+                  These are the subreddits you're currently monitoring for mentions
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!monitoringConfig?.subreddits || monitoringConfig.subreddits.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No communities configured</h3>
+                    <p className="text-gray-600 mb-4">
+                      Complete the discovery process to start monitoring subreddits for mentions.
+                    </p>
+                    <Button 
+                      onClick={() => router.push("/discovery")} 
+                      size="sm"
+                      className="flex items-center gap-2"
+                    >
+                      <Search className="h-4 w-4" />
+                      Go to Discovery
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">Active Communities</span>
+                      <Badge variant="secondary" className="bg-green-100 text-green-700">
+                        {monitoringConfig.subreddits.length} communities
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                      {monitoringConfig.subreddits.map((subreddit) => (
+                        <div
+                          key={subreddit}
+                          className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow group"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                            <span className="text-sm font-medium text-gray-900">{subreddit}</span>
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            Active
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                      <div className="text-sm text-gray-600">
+                        Monitoring keywords: {monitoringConfig.keywords?.join(', ') || 'None configured'}
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => router.push("/discovery")}
+                        className="flex items-center gap-2"
+                      >
+                        <Settings className="h-4 w-4" />
+                        Manage
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-              {/* Error Message */}
-              {error && (
-                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-                  <p className="text-red-600 text-sm">{error}</p>
-                </div>
-              )}
+            {/* Error Message */}
+            {error && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-red-600 text-sm">{error}</p>
+              </div>
+            )}
 
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="mb-6">
@@ -631,7 +654,6 @@ export default function DashboardPage() {
                   )}
                 </TabsContent>
               </Tabs>
-            </div>
           </div>
         </div>
       </div>
