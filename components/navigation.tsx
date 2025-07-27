@@ -155,31 +155,41 @@ export function Navigation() {
               <div key={`${item.title}-${item.href}`}>
                 {/* Main Navigation Item */}
                 {hasSubpages ? (
-                  <div
-                    className={cn(
-                      "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer",
-                      isActive || hasActiveSubpage
-                        ? "bg-blue-50 text-blue-700 border border-blue-200"
-                        : "text-gray-700 hover:bg-gray-50 hover:text-gray-900",
-                    )}
-                    onClick={() => toggleExpanded(item.title)}
-                  >
-                    <item.icon className={cn("h-5 w-5 flex-shrink-0", isActive || hasActiveSubpage ? "text-blue-700" : "text-gray-400")} />
-                    {!collapsed && (
-                      <>
-                        <span className="flex-1">{item.title}</span>
-                        {item.badge && (
-                          <Badge variant="secondary" className="h-5 px-2 text-xs">
-                            {item.badge}
-                          </Badge>
+                  <div className="flex items-center">
+                    <Link href={item.href} className="flex-1">
+                      <div
+                        className={cn(
+                          "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                          isActive || hasActiveSubpage
+                            ? "bg-blue-50 text-blue-700 border border-blue-200"
+                            : "text-gray-700 hover:bg-gray-50 hover:text-gray-900",
                         )}
+                      >
+                        <item.icon className={cn("h-5 w-5 flex-shrink-0", isActive || hasActiveSubpage ? "text-blue-700" : "text-gray-400")} />
+                        {!collapsed && (
+                          <>
+                            <span className="flex-1">{item.title}</span>
+                            {item.badge && (
+                              <Badge variant="secondary" className="h-5 px-2 text-xs">
+                                {item.badge}
+                              </Badge>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </Link>
+                    {!collapsed && (
+                      <button
+                        onClick={() => toggleExpanded(item.title)}
+                        className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+                      >
                         <ChevronDown 
                           className={cn(
-                            "h-4 w-4 transition-transform", 
+                            "h-4 w-4 transition-transform text-gray-400", 
                             isExpanded ? "rotate-180" : ""
                           )} 
                         />
-                      </>
+                      </button>
                     )}
                   </div>
                 ) : (
