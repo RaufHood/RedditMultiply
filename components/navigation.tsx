@@ -20,6 +20,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Zap,
+  Brain,
 } from "lucide-react"
 
 interface NavItem {
@@ -55,6 +56,12 @@ const navItems: NavItem[] = [
     href: "/dashboard?tab=analytics",
     icon: BarChart3,
     description: "Performance metrics",
+  },
+  {
+    title: "Knowledge Base",
+    href: "/knowledge-base",
+    icon: Brain,
+    description: "Organized business insights",
   },
   {
     title: "Communities",

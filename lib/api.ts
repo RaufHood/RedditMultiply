@@ -260,3 +260,29 @@ export const formatMemberCount = (count: number): string => {
   if (count >= 1000) return `${(count / 1000).toFixed(1)}K`
   return count.toString()
 }
+
+// Knowledge Base Types
+export interface Insight {
+  id: string
+  title: string
+  content: string
+  priority: 'high' | 'medium' | 'low'
+  source: string              // e.g., "r/startup"
+  created_at: string          // ISO timestamp
+  action_items?: string       // Optional next steps
+  tags?: string[]            // For better search
+}
+
+export interface KnowledgeBase {
+  'competitor-analysis': Insight[]
+  'customer-sentiment': Insight[]  
+  'market-trends': Insight[]
+  'product-intelligence': Insight[]
+}
+
+export interface PendingInsight extends Insight {
+  status: 'pending' | 'approved' | 'rejected'
+  suggestedCategory: string
+  confidence: number
+  originalText?: string  // Reddit post content
+}
