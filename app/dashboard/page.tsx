@@ -353,15 +353,23 @@ export default function DashboardPage() {
             </div>
 
             {/* Tracked Subreddits Display */}
-            <Card className="mb-6 border-2 border-green-100 bg-gradient-to-br from-green-50 via-white to-blue-50">
+            <Card className="mb-6">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-green-600" />
-                  Monitored Communities
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-green-600" />
+                    <span className="text-lg font-semibold">Monitored Communities</span>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => router.push("/discovery")}
+                    className="flex items-center gap-2"
+                  >
+                    <Settings className="h-4 w-4" />
+                    Manage
+                  </Button>
                 </CardTitle>
-                <CardDescription>
-                  These are the subreddits you're currently monitoring for mentions
-                </CardDescription>
               </CardHeader>
               <CardContent>
                 {!monitoringConfig?.subreddits || monitoringConfig.subreddits.length === 0 ? (
@@ -403,20 +411,6 @@ export default function DashboardPage() {
                           </Badge>
                         </div>
                       ))}
-                    </div>
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                      <div className="text-sm text-gray-600">
-                        Monitoring keywords: {monitoringConfig.keywords?.join(', ') || 'None configured'}
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => router.push("/discovery")}
-                        className="flex items-center gap-2"
-                      >
-                        <Settings className="h-4 w-4" />
-                        Manage
-                      </Button>
                     </div>
                   </div>
                 )}
