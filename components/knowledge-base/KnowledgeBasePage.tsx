@@ -13,6 +13,9 @@ import { SearchBar } from "./SearchBar"
 import { CategoryView } from "./CategoryView"
 import { InsightInputForm } from "./InsightInputForm"
 import { ReviewQueue } from "./ReviewQueue"
+import { AICommandInput } from "./AICommandInput"
+import { ExecutiveDashboard } from "./ExecutiveDashboard"
+import { IntelligenceInsightCard } from "./IntelligenceInsightCard"
 
 import { 
   Brain, 
@@ -30,7 +33,8 @@ export function KnowledgeBasePage() {
   
   const [showInputForm, setShowInputForm] = useState(false)
   const [editingInsight, setEditingInsight] = useState<Insight | null>(null)
-  const [activeTab, setActiveTab] = useState('browse')
+  const [activeTab, setActiveTab] = useState('intelligence')
+  const [isProcessingCommand, setIsProcessingCommand] = useState(false)
 
   useEffect(() => {
     initializeData()
@@ -83,6 +87,39 @@ export function KnowledgeBasePage() {
   }
 
   const recentInsights = getRecentInsights(5)
+
+  const handleAICommand = async (command: string) => {
+    setIsProcessingCommand(true)
+    
+    // Simulate AI processing
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    // Mock response - in production this would call an AI service
+    console.log('Processing command:', command)
+    
+    setIsProcessingCommand(false)
+  }
+
+  const handleInsightAction = (action: string, data?: any) => {
+    console.log('Insight action:', action, data)
+    
+    switch (action) {
+      case 'share-slack':
+        alert('Would share to Slack in production')
+        break
+      case 'export-notion':
+        alert('Would export to Notion in production')
+        break
+      case 'add-backlog':
+        alert('Would add to product backlog in production')
+        break
+      case 'status-change':
+        console.log('Status changed:', data)
+        break
+      default:
+        console.log('Unknown action:', action)
+    }
+  }
 
   return (
     <div className="flex min-h-screen">
@@ -155,12 +192,24 @@ export function KnowledgeBasePage() {
           </div>
         </div>
 
+        {/* AI Command Input */}
+        <div className="mb-8">
+          <AICommandInput 
+            onCommand={handleAICommand}
+            isProcessing={isProcessingCommand}
+          />
+        </div>
+
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="intelligence" className="flex items-center space-x-2">
+              <BarChart3 className="h-4 w-4" />
+              <span>Intelligence Dashboard</span>
+            </TabsTrigger>
             <TabsTrigger value="browse" className="flex items-center space-x-2">
               <FileText className="h-4 w-4" />
-              <span>Browse Knowledge Base</span>
+              <span>Browse Insights</span>
             </TabsTrigger>
             <TabsTrigger value="review" className="flex items-center space-x-2">
               <Clock className="h-4 w-4" />
@@ -172,6 +221,13 @@ export function KnowledgeBasePage() {
               )}
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="intelligence" className="space-y-6">
+            <ExecutiveDashboard 
+              timeframe="week"
+              onExport={handleExportData}
+            />
+          </TabsContent>
 
           <TabsContent value="browse" className="space-y-6">
             <CategoryNav />

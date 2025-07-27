@@ -9,9 +9,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
-  Home,
   Settings,
-  BarChart3,
   MessageSquare,
   Search,
   Users,
@@ -33,12 +31,6 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   {
-    title: "Dashboard",
-    href: "/dashboard",
-    icon: Home,
-    description: "Overview and mentions",
-  },
-  {
     title: "Discovery",
     href: "/discovery",
     icon: Search,
@@ -46,16 +38,10 @@ const navItems: NavItem[] = [
   },
   {
     title: "Mentions",
-    href: "/dashboard?tab=mentions",
+    href: "/dashboard",
     icon: MessageSquare,
     badge: "12",
     description: "New mentions to review",
-  },
-  {
-    title: "Analytics",
-    href: "/dashboard?tab=analytics",
-    icon: BarChart3,
-    description: "Performance metrics",
   },
   {
     title: "Knowledge Base",
@@ -170,6 +156,7 @@ export function Navigation() {
                     isActive
                       ? "bg-blue-50 text-blue-700 border border-blue-200"
                       : "text-gray-700 hover:bg-gray-50 hover:text-gray-900",
+                    collapsed && "justify-center"
                   )}
                 >
                   <item.icon className={cn("h-5 w-5 flex-shrink-0", isActive ? "text-blue-700" : "text-gray-400")} />
@@ -182,8 +169,8 @@ export function Navigation() {
       </div>
 
       {/* User Profile */}
-      {!collapsed && (
-        <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-gray-200">
+        {!collapsed ? (
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
               <span className="text-white text-sm font-medium">JD</span>
@@ -193,8 +180,14 @@ export function Navigation() {
               <p className="text-xs text-gray-500 truncate">john@company.com</p>
             </div>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="flex justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+              <span className="text-white text-sm font-medium">JD</span>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
