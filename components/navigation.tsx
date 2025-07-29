@@ -48,15 +48,9 @@ const navItems: NavItem[] = [
   },
   {
     title: "Knowledge Base",
-    href: "/knowledge-base",
-    icon: Brain,
-    description: "Organized business insights",
-  },
-  {
-    title: "Knowledge Base 2",
     href: "/knowledge-base-2",
     icon: Brain,
-    description: "Clean knowledge base interface",
+    description: "AI-powered document intelligence",
     subpages: [
       {
         title: "Competitor Analysis",
@@ -104,7 +98,7 @@ const bottomNavItems: NavItem[] = [
 export function Navigation() {
   const [collapsed, setCollapsed] = useState(false)
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({
-    "Knowledge Base 2": true
+    "Knowledge Base": true
   })
   const pathname = usePathname()
 
