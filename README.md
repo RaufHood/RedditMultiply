@@ -11,6 +11,7 @@ This frontend provides a user-friendly interface for:
 - **Mentions Dashboard**: Monitor brand mentions in real-time
 - **Thread Analysis**: View AI-generated summaries of Reddit threads
 - **Reply Generation**: Create compliant response drafts
+- **Knowledge Base Management**: AI-powered document editing and insights organization
 - **Analytics**: Track engagement metrics and performance
 
 ## 🛠️ Tech Stack
@@ -70,6 +71,8 @@ RedditMultiply/
 │   ├── onboarding/        # Onboarding wizard
 │   ├── discovery/         # Subreddit discovery
 │   ├── dashboard/         # Main dashboard
+│   ├── knowledge-base/    # Knowledge management system
+│   ├── knowledge-base-2/  # AI-powered document editing
 │   ├── communities/       # Community management
 │   └── settings/          # Settings panel
 ├── components/            # Reusable components
@@ -116,6 +119,19 @@ RedditMultiply/
 - **Copy-to-clipboard** functionality
 - **Regeneration** capabilities
 
+### 6. Intelligent Knowledge Base (Knowledge Base 2)
+- **AI-Powered Document Analysis**: LLM-based content categorization and updates
+- **Smart Content Updates**: Automatically updates existing information instead of duplicating
+- **Quantitative Tracking**: Maintains counts and metrics (e.g., "5 customers say X, 3 say Y")
+- **Context-Aware Editing**: Uses current document state for intelligent suggestions
+- **Real-time Diff Visualization**: Shows before/after changes with proper line-by-line highlighting
+- **Four Document Categories**: 
+  - Competitor Analysis
+  - Customer Sentiment 
+  - Market Trends
+  - Product Intelligence
+- **Fallback System**: Gracefully handles AI service failures with keyword-based backup
+
 ## 🔧 Configuration
 
 ### Environment Variables
@@ -129,6 +145,10 @@ NEXT_PUBLIC_ANALYTICS_ID=your_analytics_id
 
 # Optional: Feature flags
 NEXT_PUBLIC_ENABLE_AI_FEATURES=true
+
+# Required for Knowledge Base 2 AI features
+OPENAI_API_KEY=your_openai_api_key
+OPENAI_MODEL=gpt-4o-mini
 \`\`\`
 
 ### API Configuration
@@ -224,6 +244,19 @@ The application uses React's built-in state management:
 - Add/remove communities
 - View community statistics
 
+### Knowledge Base (`/knowledge-base`)
+- Traditional insight management
+- Category-based organization
+- Manual insight entry and editing
+
+### Knowledge Base 2 (`/knowledge-base-2`)
+- **AI-powered document editing interface**
+- **Natural language input processing**
+- **Intelligent content categorization**  
+- **Real-time document updates**
+- **Visual diff comparison**
+- **Smart quantitative tracking**
+
 ### Settings (`/settings`)
 - Brand context editing
 - Tone and guideline updates
@@ -257,6 +290,14 @@ The application uses React's built-in state management:
    - [ ] Copy to clipboard
    - [ ] Regenerate drafts
 
+5. **Knowledge Base 2 (AI Document Editing)**
+   - [ ] Enter natural language updates
+   - [ ] Verify AI categorization accuracy
+   - [ ] Check intelligent content updates (not duplicates)
+   - [ ] Test quantitative tracking (customer counts, etc.)
+   - [ ] Validate diff visualization
+   - [ ] Test fallback system when AI fails
+
 ### Browser Testing
 
 Test on:
@@ -274,11 +315,13 @@ Test on:
 - Clear `.next` folder: `rm -rf .next`
 - Reinstall dependencies: `rm -rf node_modules && npm install`
 - Check TypeScript errors: `npm run type-check`
+- **localStorage SSR Error**: Ensure all localStorage access is wrapped in `typeof window !== 'undefined'` checks
 
 **API Connection Issues:**
 - Verify backend is running on port 8000
 - Check `NEXT_PUBLIC_API_URL` in `.env.local`
 - Ensure CORS is configured on backend
+- **Knowledge Base 2 AI Features**: Verify `OPENAI_API_KEY` is set in backend environment
 
 **Styling Issues:**
 - Clear browser cache
@@ -325,6 +368,9 @@ The app can be deployed to any platform that supports Next.js:
 - [ ] Custom themes
 - [ ] Export functionality
 - [ ] Advanced analytics charts
+- [ ] Knowledge Base document versioning
+- [ ] AI-powered insight extraction from Reddit threads
+- [ ] Cross-document intelligence and relationship mapping
 
 ## 📚 Resources
 
