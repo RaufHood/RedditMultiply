@@ -241,6 +241,17 @@ export const api = {
     const response = await fetch(`${API_BASE_URL}/analytics/`)
     if (!response.ok) throw new Error('Failed to fetch analytics')
     return response.json()
+  },
+
+  // Suggest Edit
+  async suggestEdit(input: string, storage?: Record<string, string>): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/suggest-edit/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input, storage })
+    })
+    if (!response.ok) throw new Error('Failed to get edit suggestions')
+    return response.json()
   }
 }
 
@@ -259,4 +270,30 @@ export const formatMemberCount = (count: number): string => {
   if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`
   if (count >= 1000) return `${(count / 1000).toFixed(1)}K`
   return count.toString()
+}
+
+// Knowledge Base Types
+export interface Insight {
+  id: string
+  title: string
+  content: string
+  priority: 'high' | 'medium' | 'low'
+  source: string              // e.g., "r/startup"
+  created_at: string          // ISO timestamp
+  action_items?: string       // Optional next steps
+  tags?: string[]            // For better search
+}
+
+export interface KnowledgeBase {
+  'competitor-analysis': Insight[]
+  'customer-sentiment': Insight[]  
+  'market-trends': Insight[]
+  'product-intelligence': Insight[]
+}
+
+export interface PendingInsight extends Insight {
+  status: 'pending' | 'approved' | 'rejected'
+  suggestedCategory: string
+  confidence: number
+  originalText?: string  // Reddit post content
 }

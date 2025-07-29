@@ -163,6 +163,132 @@ Generate a draft reply in JSON format:
                 }
             }
     
+    async def analyze_document_update(self, user_input: str, documents: Dict[str, str]) -> Dict:
+        """
+        Analyze user input and suggest intelligent document updates using LLM
+        Based on the trart.md approach for smart document editing
+        """
+        try:
+            suggestions = []
+            
+            # Analyze each document for potential updates
+            for doc_name, current_content in documents.items():
+                suggestion = await self._analyze_single_document(user_input, doc_name, current_content)
+                if suggestion:
+                    suggestions.append(suggestion)
+            
+            # Sort by confidence and return top suggestions
+            suggestions.sort(key=lambda x: x.get("confidence", 0), reverse=True)
+            return {"suggestions": suggestions[:2]}  # Return top 2 suggestions
+            
+        except Exception as e:
+            print(f"Error in document analysis: {e}")
+            return {"error": f"Document analysis failed: {str(e)}"}
+    
+    async def _analyze_single_document(self, user_input: str, doc_name: str, current_content: str) -> Optional[Dict]:
+        """
+        Analyze if user input is relevant to a specific document and suggest updates
+        """
+        try:
+            # Document type specific instructions
+            doc_instructions = {
+                "competitor-analysis": {
+                    "focus": "competitor information, market positioning, competitive threats, pricing strategies, competitive advantages",
+                    "sections": ["## Direct Competitors", "## Competitive Advantages", "## Threat Assessment"],
+                    "icon": "Target",
+                    "color": "text-blue-600",
+                    "title": "Competitor Analysis"
+                },
+                "customer-sentiment": {
+                    "focus": "customer feedback, reviews, satisfaction scores, complaints, user experience insights, support feedback",
+                    "sections": ["## Overall Sentiment Trends", "## Recent Insights", "## Key Feedback Categories"],
+                    "icon": "Heart", 
+                    "color": "text-pink-600",
+                    "title": "Customer Sentiment"
+                },
+                "market-trends": {
+                    "focus": "industry trends, market growth, emerging technologies, regulatory changes, economic factors, future predictions",
+                    "sections": ["## Industry Overview", "## Emerging Trends", "## Future Outlook"],
+                    "icon": "TrendingUp",
+                    "color": "text-green-600", 
+                    "title": "Market Trends"
+                },
+                "product-intelligence": {
+                    "focus": "product features, functionality, bugs, enhancements, usability feedback, performance issues, roadmap items",
+                    "sections": ["## Feature Performance Analysis", "## User Experience Insights", "## Product Roadmap Intelligence"],
+                    "icon": "Search",
+                    "color": "text-purple-600",
+                    "title": "Product Intelligence"
+                }
+            }
+            
+            doc_config = doc_instructions.get(doc_name, {})
+            if not doc_config:
+                return None
+            
+            system_prompt = f"""You are an expert documentation editor. Analyze if the user input is relevant to {doc_config.get('title', doc_name)} and suggest intelligent updates.
+
+Document Focus: {doc_config.get('focus', 'general business information')}
+
+Your task:
+1. Determine if the user input is relevant to this document type (relevance score 0-100)
+2. If relevant (score > 30), suggest how to update the document intelligently:
+   - For numerical data: Update existing numbers rather than append
+   - For customer feedback: Add to quantitative tracking (e.g., "3 customers report X, 2 report Y")  
+   - For factual updates: Replace old information with new information
+   - For new information: Add to appropriate section
+   - For contradictory info: Note the conflict for user review
+
+Current Document Content:
+{current_content}
+
+User Input: {user_input}
+
+Respond in JSON format:
+{{
+    "relevant": true/false,
+    "confidence": 85,
+    "action": "update|append|replace",
+    "section": "## Section Name",
+    "reasoning": "Why this update makes sense",
+    "updated_content": "Full updated document content with changes applied"
+}}
+
+If not relevant, respond: {{"relevant": false, "confidence": 0}}"""
+
+            response = await self._call_openai_async(
+                system_prompt=system_prompt,
+                user_prompt=f"Analyze relevance and suggest updates for {doc_name}"
+            )
+            
+            try:
+                analysis = json.loads(response)
+                
+                if not analysis.get("relevant", False) or analysis.get("confidence", 0) < 30:
+                    return None
+                
+                return {
+                    "document": doc_name,
+                    "section": analysis.get("section", doc_config["sections"][0]),
+                    "action": analysis.get("action", "append"),
+                    "content": user_input.strip(),
+                    "confidence": analysis.get("confidence", 50),
+                    "reason": analysis.get("reasoning", f"Relevant to {doc_config['title']}"),
+                    "icon": doc_config["icon"],
+                    "color": doc_config["color"],
+                    "title": doc_config["title"],
+                    "before_content": current_content,
+                    "after_content": analysis.get("updated_content", current_content + f"\n\n## Recent Update\n{user_input.strip()}")
+                }
+                
+            except json.JSONDecodeError:
+                # Fallback if JSON parsing fails
+                return None
+                
+        except Exception as e:
+            print(f"Error analyzing document {doc_name}: {e}")
+            return None
+    
     async def _call_openai_async(self, system_prompt: str, user_prompt: str) -> str:
         """Make async OpenAI API call"""
         loop = asyncio.get_event_loop()

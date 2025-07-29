@@ -6,9 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { X, Plus, Save, ArrowLeft } from "lucide-react"
+import { Save, ArrowLeft } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Navigation } from "@/components/navigation"
 import { api, BrandContext } from "@/lib/api"
@@ -23,7 +22,6 @@ interface BrandData {
   tone: string
   competitors: string
   prohibitedTopics: string
-  keywords: string[]
   disclosure: string
 }
 
@@ -48,10 +46,8 @@ export default function SettingsPage() {
     tone: "",
     competitors: "",
     prohibitedTopics: "",
-    keywords: [],
     disclosure: "",
   })
-  const [newKeyword, setNewKeyword] = useState("")
 
   // Load brand context from store or backend
   useEffect(() => {
@@ -93,22 +89,6 @@ export default function SettingsPage() {
     setBrandData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const addKeyword = () => {
-    if (newKeyword.trim() && !brandData.keywords.includes(newKeyword.trim())) {
-      setBrandData((prev) => ({
-        ...prev,
-        keywords: [...prev.keywords, newKeyword.trim()],
-      }))
-      setNewKeyword("")
-    }
-  }
-
-  const removeKeyword = (keyword: string) => {
-    setBrandData((prev) => ({
-      ...prev,
-      keywords: prev.keywords.filter((k) => k !== keyword),
-    }))
-  }
 
   const handleSave = async () => {
     try {
@@ -125,7 +105,7 @@ export default function SettingsPage() {
         console.warn('Backend not available, saving to local storage only:', apiError)
       }
       
-      // Save to local store
+      // Save to local store (preserve existing keywords from brandContext)
       const completeBrandContext: BrandContext = {
         brand_name: contextData.brand_name || "",
         one_line: contextData.one_line || "",
@@ -133,7 +113,7 @@ export default function SettingsPage() {
         target_users: contextData.target_users || [],
         value_props: contextData.value_props || [],
         tone: contextData.tone || { formality: "neutral", voice_keywords: [] },
-        keywords: contextData.keywords || [],
+        keywords: brandContext?.keywords || [], // Preserve existing keywords - managed in Discovery
         competitors: contextData.competitors || [],
         prohibited: contextData.prohibited || [],
         disclosure_template: contextData.disclosure_template || "",
@@ -210,7 +190,6 @@ export default function SettingsPage() {
           <Tabs defaultValue="brand" className="space-y-6">
             <TabsList>
               <TabsTrigger value="brand">Brand Information</TabsTrigger>
-              <TabsTrigger value="keywords">Keywords & Monitoring</TabsTrigger>
               <TabsTrigger value="tone">Tone & Voice</TabsTrigger>
             </TabsList>
 
@@ -306,41 +285,6 @@ export default function SettingsPage() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="keywords" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Keywords & Monitoring</CardTitle>
-                  <CardDescription>Manage the keywords we monitor for mentions</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label>Current Keywords</Label>
-                    <div className="flex flex-wrap gap-2 mt-2 mb-4">
-                      {brandData.keywords.map((keyword) => (
-                        <Badge key={keyword} variant="secondary" className="flex items-center gap-1">
-                          {keyword}
-                          <X
-                            className="h-3 w-3 cursor-pointer hover:text-red-500"
-                            onClick={() => removeKeyword(keyword)}
-                          />
-                        </Badge>
-                      ))}
-                    </div>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Add new keyword"
-                        value={newKeyword}
-                        onChange={(e) => setNewKeyword(e.target.value)}
-                        onKeyPress={(e) => e.key === "Enter" && addKeyword()}
-                      />
-                      <Button onClick={addKeyword} size="sm">
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
 
             <TabsContent value="tone" className="space-y-6">
               <Card>
