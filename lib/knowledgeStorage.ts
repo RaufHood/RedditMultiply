@@ -76,7 +76,7 @@ export class KnowledgeStorage {
   
   // Initialize with sample data if empty
   initializeSampleData(): void {
-    if (!localStorage.getItem(this.STORAGE_KEY)) {
+    if (typeof window !== 'undefined' && !localStorage.getItem(this.STORAGE_KEY)) {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(sampleInsights))
     }
   }
@@ -91,6 +91,8 @@ export class KnowledgeStorage {
   }
   
   saveInsight(category: keyof KnowledgeBase, insight: Insight): void {
+    if (typeof window === 'undefined') return
+    
     const data = this.getData()
     if (!data[category]) data[category] = []
     
@@ -99,6 +101,8 @@ export class KnowledgeStorage {
   }
   
   updateInsight(category: keyof KnowledgeBase, insightId: string, updates: Partial<Insight>): void {
+    if (typeof window === 'undefined') return
+    
     const data = this.getData()
     if (!data[category]) return
     
@@ -110,6 +114,8 @@ export class KnowledgeStorage {
   }
   
   deleteInsight(category: keyof KnowledgeBase, insightId: string): void {
+    if (typeof window === 'undefined') return
+    
     const data = this.getData()
     if (!data[category]) return
     
@@ -125,7 +131,7 @@ export class KnowledgeStorage {
     return allInsights.filter(insight => 
       insight.title.toLowerCase().includes(searchTerm) ||
       insight.content.toLowerCase().includes(searchTerm) ||
-      insight.tags?.some(tag => tag.toLowerCase().includes(searchTerm)) ||
+      insight.tags?.some((tag: string) => tag.toLowerCase().includes(searchTerm)) ||
       insight.source.toLowerCase().includes(searchTerm)
     )
   }
@@ -164,6 +170,15 @@ export class KnowledgeStorage {
   }
   
   private getData(): KnowledgeBase {
+    if (typeof window === 'undefined') {
+      return {
+        'competitor-analysis': [],
+        'customer-sentiment': [],
+        'market-trends': [],
+        'product-intelligence': []
+      }
+    }
+    
     const stored = localStorage.getItem(this.STORAGE_KEY)
     return stored ? JSON.parse(stored) : {
       'competitor-analysis': [],
@@ -178,12 +193,18 @@ export class PendingQueue {
   private PENDING_KEY = 'reddit-pending-insights'
   
   addToPending(insight: PendingInsight): void {
+    if (typeof window === 'undefined') return
+    
     const pending = this.getPending()
     pending.push(insight)
     localStorage.setItem(this.PENDING_KEY, JSON.stringify(pending))
   }
   
   getPending(): PendingInsight[] {
+    if (typeof window === 'undefined') {
+      return []
+    }
+    
     const stored = localStorage.getItem(this.PENDING_KEY)
     return stored ? JSON.parse(stored) : []
   }
