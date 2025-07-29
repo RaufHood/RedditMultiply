@@ -1,125 +1,114 @@
-# RedditPro AI Frontend
+# RedditPro AI - Reddit Monitoring & Engagement Platform
 
-A modern Next.js 14 frontend application for RedditPro AI - an intelligent Reddit monitoring and engagement platform. Built with TypeScript, Tailwind CSS, and shadcn/ui components.
+An AI-powered platform for monitoring Reddit mentions, discovering relevant communities, and generating compliant engagement responses. Built for brands and businesses to maintain authentic presence on Reddit while following platform guidelines.
 
-## 🎯 What This Frontend Does
+## 🎯 What This Application Does
 
-This frontend provides a user-friendly interface for:
+RedditPro AI helps you:
 
-- **Onboarding Wizard**: Collect brand context and business information
-- **Subreddit Discovery**: Browse and select relevant communities
-- **Mentions Dashboard**: Monitor brand mentions in real-time
-- **Thread Analysis**: View AI-generated summaries of Reddit threads
-- **Reply Generation**: Create compliant response drafts
-- **Knowledge Base Management**: AI-powered document editing and insights organization
-- **Analytics**: Track engagement metrics and performance
+- **🔍 Discover Relevant Communities**: Find subreddits where your target audience discusses topics related to your brand
+- **📊 Monitor Brand Mentions**: Automatically track posts and comments mentioning your brand, products, or keywords
+- **🤖 Generate Smart Replies**: Create contextually appropriate, compliant response drafts using AI
+- **📈 Track Engagement**: Monitor sentiment, response times, and engagement metrics
+- **✅ Ensure Compliance**: Check replies against subreddit rules and brand guidelines before posting
 
-## 🛠️ Tech Stack
+## 🏗️ Architecture
 
-- **Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Components**: shadcn/ui
-- **State Management**: React hooks (useState, useEffect)
-- **API Client**: Custom TypeScript API service
-- **Icons**: Lucide React
+This is a full-stack application with:
 
-## 📋 Prerequisites
+- **Frontend**: Next.js 14 with TypeScript, shadcn/ui components
+- **Backend**: FastAPI (Python) with PRAW for Reddit API integration
+- **AI Integration**: Template-based reply generation (expandable to Claude/GPT)
+- **Storage**: In-memory storage for MVP (expandable to database)
 
-- **Node.js 18+**
-- **npm or yarn**
-- **Backend server running** (see backend README)
 
-## 🔧 Installation
+## 🚀 Quick Start
 
-1. **Navigate to the frontend directory:**
-   \`\`\`bash
-   cd RedditMultiply
-   \`\`\`
+### Prerequisites
 
-2. **Install dependencies:**
-   \`\`\`bash
-   npm install
-   # or
-   yarn install
-   \`\`\`
+- **Node.js 18+** (for frontend)
+- **Python 3.11+** (for backend)
+- **Reddit API credentials** (see setup below)
 
-3. **Set up environment variables:**
-   Create a `.env.local` file:
-   \`\`\`env
-   NEXT_PUBLIC_API_URL=http://localhost:8000
-   \`\`\`
+### 1. Get Reddit API Credentials
 
-4. **Start the development server:**
-   \`\`\`bash
-   npm run dev
-   # or
-   yarn dev
-   \`\`\`
+1. Go to https://www.reddit.com/prefs/apps/
+2. Click "Create App" or "Create Another App"
+3. Choose "script" as the app type
+4. Note down your `client_id` and `client_secret`
 
-5. **Open your browser:**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+### 2. Start the Backend
 
-## 🏗️ Project Structure
+```bash
+# Navigate to backend directory
+cd backend
 
-\`\`\`
-RedditMultiply/
-├── app/                    # Next.js app directory
-│   ├── page.tsx           # Landing page
-│   ├── layout.tsx         # Root layout
-│   ├── globals.css        # Global styles
-│   ├── onboarding/        # Onboarding wizard
-│   ├── discovery/         # Subreddit discovery
-│   ├── dashboard/         # Main dashboard
-│   ├── knowledge-base/    # Knowledge management system
-│   ├── knowledge-base-2/  # AI-powered document editing
-│   ├── communities/       # Community management
-│   └── settings/          # Settings panel
-├── components/            # Reusable components
-│   ├── ui/               # shadcn/ui components
-│   ├── navigation.tsx    # Navigation component
-│   └── theme-provider.tsx # Theme provider
-├── lib/                  # Utilities and services
-│   ├── api.ts           # API client
-│   └── utils.ts         # Utility functions
-├── hooks/               # Custom React hooks
-├── public/              # Static assets
-└── styles/              # Additional styles
-\`\`\`
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-## 🎮 Key Features
+# Install dependencies
+pip install -r requirements.txt
 
-### 1. Onboarding Wizard
-- **Multi-step form** for brand context collection
-- **Real-time validation** and progress tracking
-- **Dynamic keyword generation** based on inputs
-- **Responsive design** for all screen sizes
+# Create .env file with your Reddit credentials
+echo "REDDIT_CLIENT_ID=your_client_id
+REDDIT_CLIENT_SECRET=your_client_secret
+REDDIT_USER_AGENT=RedditProAI/1.0
+REDDIT_USERNAME=your_username
+REDDIT_PASSWORD=your_password" > .env
 
-### 2. Subreddit Discovery
-- **AI-powered recommendations** based on keywords
-- **Manual search** functionality
-- **Community cards** with relevance scores
-- **Selection management** with visual feedback
+# Start the server
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
 
-### 3. Dashboard
-- **Real-time mentions feed** with auto-refresh
-- **Priority filtering** and status management
-- **Analytics overview** with key metrics
-- **Responsive grid layout**
+### 3. Start the Frontend
 
-### 4. Thread Analysis
-- **Modal-based thread details**
-- **AI-generated summaries** with structured sections
-- **Sentiment analysis** display
-- **Action buttons** for engagement
+```bash
+# Open new terminal and navigate to frontend
+cd RedditMultiply
 
-### 5. Reply Generation
-- **AI-powered draft creation**
-- **Compliance checking** with real-time feedback
-- **Copy-to-clipboard** functionality
-- **Regeneration** capabilities
+# Install dependencies
+npm install
 
-### 6. Intelligent Knowledge Base (Knowledge Base 2)
+# Start development server
+npm run dev
+```
+
+### 4. Access the Application
+
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:8000
+- **API Documentation**: http://localhost:8000/docs
+
+## 🎮 How to Use
+
+### 1. Onboarding
+- Complete the business context wizard
+- Set your brand name, tone, and keywords
+- Review generated keyword suggestions
+
+### 2. Discover Communities
+- Browse AI-recommended subreddits
+- Search for specific communities
+- Select relevant subreddits for monitoring
+
+### 3. Start Monitoring
+- Configure monitoring settings
+- Watch for new mentions in real-time
+- Review mention feed with priority indicators
+
+### 4. Engage Responsibly
+- Click on mentions to see thread details
+- Generate AI-powered reply drafts
+- Check compliance before posting
+- Copy replies to paste manually on Reddit
+
+### 5. Track Performance
+- Monitor analytics dashboard
+- Track response times and sentiment
+- View top-performing subreddits
+
+### Intelligent Knowledge Base (Knowledge Base 2)
 - **AI-Powered Document Analysis**: LLM-based content categorization and updates
 - **Smart Content Updates**: Automatically updates existing information instead of duplicating
 - **Quantitative Tracking**: Maintains counts and metrics (e.g., "5 customers say X, 3 say Y")
@@ -132,261 +121,95 @@ RedditMultiply/
   - Product Intelligence
 - **Fallback System**: Gracefully handles AI service failures with keyword-based backup
 
+
 ## 🔧 Configuration
 
 ### Environment Variables
 
-\`\`\`env
-# API Configuration
+**Backend (.env):**
+```env
+REDDIT_CLIENT_ID=your_reddit_client_id
+REDDIT_CLIENT_SECRET=your_reddit_client_secret
+REDDIT_USER_AGENT=RedditProAI/1.0
+REDDIT_USERNAME=your_reddit_username
+REDDIT_PASSWORD=your_reddit_password
+```
+
+**Frontend (.env.local):**
+```env
 NEXT_PUBLIC_API_URL=http://localhost:8000
-
-# Optional: Analytics
-NEXT_PUBLIC_ANALYTICS_ID=your_analytics_id
-
-# Optional: Feature flags
-NEXT_PUBLIC_ENABLE_AI_FEATURES=true
-
-# Required for Knowledge Base 2 AI features
-OPENAI_API_KEY=your_openai_api_key
-OPENAI_MODEL=gpt-4o-mini
-\`\`\`
-
-### API Configuration
-
-The frontend connects to the backend API through the `lib/api.ts` service:
-
-\`\`\`typescript
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-\`\`\`
-
-## 🧪 Development
-
-### Available Scripts
-
-\`\`\`bash
-# Development
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
-npm run type-check   # Run TypeScript checks
-\`\`\`
-
-### Component Development
-
-The project uses shadcn/ui components. To add new components:
-
-\`\`\`bash
-npx shadcn@latest add [component-name]
-\`\`\`
-
-### Styling Guidelines
-
-- Use Tailwind CSS classes for styling
-- Follow the existing design system
-- Use shadcn/ui components when possible
-- Maintain responsive design principles
-
-## 🎨 UI/UX Features
-
-### Design System
-- **Consistent spacing** using Tailwind's spacing scale
-- **Color palette** with light/dark mode support
-- **Typography** hierarchy with proper font weights
-- **Component variants** for different states
-
-### Responsive Design
-- **Mobile-first** approach
-- **Breakpoint system** using Tailwind's responsive prefixes
-- **Flexible layouts** that adapt to screen sizes
-- **Touch-friendly** interactions
-
-### Accessibility
-- **Semantic HTML** structure
-- **Keyboard navigation** support
-- **Screen reader** compatibility
-- **Color contrast** compliance
-
-## 🔄 State Management
-
-The application uses React's built-in state management:
-
-- **useState** for local component state
-- **useEffect** for side effects and API calls
-- **Custom hooks** for reusable logic
-- **Context** for theme management
-
-## 📱 Pages Overview
-
-### Landing Page (`/`)
-- Welcome screen with app overview
-- Quick start guide
-- Feature highlights
-
-### Onboarding (`/onboarding`)
-- Multi-step wizard for brand setup
-- Form validation and progress tracking
-- Keyword generation and review
-
-### Discovery (`/discovery`)
-- Subreddit search and recommendations
-- Community selection interface
-- Monitoring configuration
-
-### Dashboard (`/dashboard`)
-- Main workspace after setup
-- Mentions feed with filtering
-- Analytics overview
-- Quick actions
-
-### Communities (`/communities`)
-- Manage monitored subreddits
-- Add/remove communities
-- View community statistics
-
-### Knowledge Base (`/knowledge-base`)
-- Traditional insight management
-- Category-based organization
-- Manual insight entry and editing
-
-### Knowledge Base 2 (`/knowledge-base-2`)
-- **AI-powered document editing interface**
-- **Natural language input processing**
-- **Intelligent content categorization**  
-- **Real-time document updates**
-- **Visual diff comparison**
-- **Smart quantitative tracking**
-
-### Settings (`/settings`)
-- Brand context editing
-- Tone and guideline updates
-- Disclosure template management
+```
 
 ## 🧪 Testing
 
-### Manual Testing Checklist
+### Backend API Testing
 
-1. **Onboarding Flow**
-   - [ ] Complete all wizard steps
-   - [ ] Verify form validation
-   - [ ] Check keyword generation
-   - [ ] Test navigation between steps
+```bash
+# Health check
+curl http://localhost:8000/health
 
-2. **Discovery Page**
-   - [ ] Search for subreddits
-   - [ ] Select/deselect communities
-   - [ ] Verify API integration
-   - [ ] Test responsive layout
+# Set brand context
+curl -X POST http://localhost:8000/brand/context \
+  -H "Content-Type: application/json" \
+  -d '{"brand_name": "TestBrand", "keywords": ["test"]}'
 
-3. **Dashboard**
-   - [ ] View mentions feed
-   - [ ] Filter by status/priority
-   - [ ] Open thread details
-   - [ ] Generate reply drafts
+# Discover subreddits
+curl -X POST http://localhost:8000/subreddits/discover \
+  -H "Content-Type: application/json" \
+  -d '{"keywords": ["python", "programming"]}'
+```
 
-4. **Reply Generation**
-   - [ ] Create draft replies
-   - [ ] Check compliance
-   - [ ] Copy to clipboard
-   - [ ] Regenerate drafts
+### Frontend Testing
 
-5. **Knowledge Base 2 (AI Document Editing)**
-   - [ ] Enter natural language updates
-   - [ ] Verify AI categorization accuracy
-   - [ ] Check intelligent content updates (not duplicates)
-   - [ ] Test quantitative tracking (customer counts, etc.)
-   - [ ] Validate diff visualization
-   - [ ] Test fallback system when AI fails
+1. Open http://localhost:3000
+2. Complete onboarding flow
+3. Test subreddit discovery
+4. Verify monitoring functionality
+5. Test reply generation
 
-### Browser Testing
+## 🚧 Current Limitations (MVP)
 
-Test on:
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
-- Mobile browsers
+- **In-memory Storage**: Data lost on server restart
+- **Single User**: No multi-user support
+- **Manual Posting**: Copy/paste replies (no OAuth posting)
+- **Basic AI**: Not using RAG for small document count
+- **No Authentication**: MVP version
 
-## 🐛 Troubleshooting
+## 🔮 Roadmap
 
-### Common Issues
+### Phase 2 Features
+- [ ] Database integration (PostgreSQL)
+- [ ] User authentication
+- [ ] RAG for updating knowledge base
+- [ ] OAuth posting to Reddit
+- [ ] Email notifications
+- [ ] Advanced analytics
 
-**Build Errors:**
-- Clear `.next` folder: `rm -rf .next`
-- Reinstall dependencies: `rm -rf node_modules && npm install`
-- Check TypeScript errors: `npm run type-check`
-- **localStorage SSR Error**: Ensure all localStorage access is wrapped in `typeof window !== 'undefined'` checks
+### Phase 3 Features
+- [ ] Multi-brand support
+- [ ] Team collaboration
+- [ ] Advanced compliance rules
+- [ ] Historical data analysis
+- [ ] Mobile app
 
-**API Connection Issues:**
-- Verify backend is running on port 8000
-- Check `NEXT_PUBLIC_API_URL` in `.env.local`
-- Ensure CORS is configured on backend
-- **Knowledge Base 2 AI Features**: Verify `OPENAI_API_KEY` is set in backend environment
 
-**Styling Issues:**
-- Clear browser cache
-- Check Tailwind CSS compilation
-- Verify shadcn/ui component imports
+## 📚 Documentation
 
-**Performance Issues:**
-- Check bundle size: `npm run build`
-- Optimize images and assets
-- Review API call frequency
+- [Backend Documentation](./backend/README.md)
+- [Frontend Documentation](./RedditMultiply/README.md)
+- [API Documentation](http://localhost:8000/docs) (when running)
 
-## 🚀 Deployment
+## 📄 License
 
-### Vercel (Recommended)
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-1. **Connect repository** to Vercel
-2. **Set environment variables** in Vercel dashboard
-3. **Deploy automatically** on push to main branch
+## ⚠️ Important Notes
 
-### Other Platforms
-
-The app can be deployed to any platform that supports Next.js:
-- Netlify
-- Railway
-- DigitalOcean App Platform
-- AWS Amplify
-
-## 🔮 Future Enhancements
-
-### UI/UX Improvements
-- [ ] Advanced filtering and search
-- [ ] Drag-and-drop interface
-- [ ] Keyboard shortcuts
-- [ ] Progressive Web App (PWA)
-
-### Performance Optimizations
-- [ ] Image optimization
-- [ ] Code splitting
-- [ ] Caching strategies
-- [ ] Bundle optimization
-
-### Feature Additions
-- [ ] Dark mode toggle
-- [ ] Custom themes
-- [ ] Export functionality
-- [ ] Advanced analytics charts
-- [ ] Knowledge Base document versioning
-- [ ] AI-powered insight extraction from Reddit threads
-- [ ] Cross-document intelligence and relationship mapping
-
-## 📚 Resources
-
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
-- [shadcn/ui Documentation](https://ui.shadcn.com)
-- [TypeScript Documentation](https://www.typescriptlang.org/docs)
-
-## 🤝 Contributing
-
-1. Follow the existing code style
-2. Add proper TypeScript types
-3. Test on multiple browsers
-4. Update documentation
-5. Ensure accessibility compliance
+- **Reddit API Compliance**: This tool respects Reddit's API terms of service
+- **Manual Posting**: MVP requires manual copy/paste to avoid spam detection
+- **Rate Limiting**: Built-in delays to respect Reddit's rate limits
+- **Transparency**: Always disclose brand affiliation in replies
 
 ---
 
-**Built with Next.js, TypeScript, and shadcn/ui for the best developer experience**
+**Built with ❤️ for authentic Reddit engagement** 
