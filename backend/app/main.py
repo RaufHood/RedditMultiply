@@ -13,7 +13,11 @@ app = FastAPI(
 )
 
 # Configure CORS for Next.js frontend
-allowed_origins = ["http://localhost:3000"]  # Local development
+allowed_origins = [
+    "http://localhost:3000",  # Local development
+    "http://localhost:3001",  # Current frontend port
+    "http://localhost:3002",  # Alternative port
+]
 
 # Add production domains if deployed
 if os.getenv("VERCEL_URL"):
@@ -36,6 +40,7 @@ from app.api.monitoring import router as monitoring_router
 from app.api.analytics import router as analytics_router
 from app.api.threads import router as threads_router
 from app.api.replies import router as replies_router
+from app.api.suggest_edit import router as suggest_edit_router
 
 # Include routers
 app.include_router(brand_router)
@@ -44,6 +49,7 @@ app.include_router(monitoring_router)
 app.include_router(analytics_router)
 app.include_router(threads_router)
 app.include_router(replies_router)
+app.include_router(suggest_edit_router)
 
 @app.get("/")
 async def root():

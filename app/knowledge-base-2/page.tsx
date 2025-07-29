@@ -8,57 +8,36 @@ import { Badge } from "@/components/ui/badge"
 import { Navigation } from "@/components/navigation"
 import { Brain, Sparkles, ArrowUp, Loader2, Target, Heart, TrendingUp, Search, CheckCircle, X } from "lucide-react"
 import { CodeComparison } from "@/components/magicui/code-comparison"
+import { api } from "@/lib/api"
 
 interface Suggestion {
-  category: 'competitor-analysis' | 'customer-sentiment' | 'market-trends' | 'product-intelligence'
+  document: 'competitor-analysis' | 'customer-sentiment' | 'market-trends' | 'product-intelligence'
+  section: string
+  action: 'add_after' | 'replace'
+  content: string
   confidence: number
   reason: string
-  icon: React.ComponentType<{ className?: string }>
+  icon: string
   color: string
   title: string
+  before_content: string
+  after_content: string
 }
 
 export default function KnowledgeBase2Page() {
   const [input, setInput] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
-  const [suggestion, setSuggestion] = useState<Suggestion | null>(null)
-  const [beforeContent, setBeforeContent] = useState('')
-  const [afterContent, setAfterContent] = useState('')
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([])
+  const [selectedSuggestion, setSelectedSuggestion] = useState<Suggestion | null>(null)
   const [showComparison, setShowComparison] = useState(false)
 
-  const categorizeContent = (text: string): Suggestion => {
-    const lowerText = text.toLowerCase()
-    
-    // Keywords for each category
-    const competitorKeywords = ['competitor', 'competition', 'rival', 'market share', 'competitor analysis', 'threat', 'competitive advantage', 'pricing strategy']
-    const sentimentKeywords = ['customer', 'feedback', 'review', 'sentiment', 'satisfaction', 'complaint', 'happy', 'unhappy', 'user experience', 'support']
-    const trendsKeywords = ['trend', 'market', 'industry', 'growth', 'emerging', 'future', 'prediction', 'forecast', 'opportunity']
-    const productKeywords = ['product', 'feature', 'functionality', 'bug', 'enhancement', 'usability', 'performance', 'integration']
-    
-    const scores = {
-      'competitor-analysis': competitorKeywords.filter(keyword => lowerText.includes(keyword)).length,
-      'customer-sentiment': sentimentKeywords.filter(keyword => lowerText.includes(keyword)).length,
-      'market-trends': trendsKeywords.filter(keyword => lowerText.includes(keyword)).length,
-      'product-intelligence': productKeywords.filter(keyword => lowerText.includes(keyword)).length
-    }
-    
-    const maxScore = Math.max(...Object.values(scores))
-    const category = Object.keys(scores).find(key => scores[key as keyof typeof scores] === maxScore) as keyof typeof scores
-    
-    const categoryMap = {
-      'competitor-analysis': { icon: Target, color: 'text-blue-600', title: 'Competitor Analysis', confidence: maxScore * 20 },
-      'customer-sentiment': { icon: Heart, color: 'text-pink-600', title: 'Customer Sentiment', confidence: maxScore * 20 },
-      'market-trends': { icon: TrendingUp, color: 'text-green-600', title: 'Market Trends', confidence: maxScore * 20 },
-      'product-intelligence': { icon: Search, color: 'text-purple-600', title: 'Product Intelligence', confidence: maxScore * 20 }
-    }
-    
-    return {
-      category,
-      confidence: Math.min(Math.max(categoryMap[category].confidence, 15), 95), // Ensure reasonable confidence range
-      reason: `Detected ${maxScore} relevant keywords for ${categoryMap[category].title}`,
-      icon: categoryMap[category].icon,
-      color: categoryMap[category].color,
-      title: categoryMap[category].title
+  const getIconComponent = (iconName: string) => {
+    switch (iconName) {
+      case 'Target': return Target
+      case 'Heart': return Heart
+      case 'TrendingUp': return TrendingUp
+      case 'Search': return Search
+      default: return Brain
     }
   }
 
@@ -67,48 +46,100 @@ export default function KnowledgeBase2Page() {
     
     setIsProcessing(true)
     
-    // Analyze content and suggest category
-    const newSuggestion = categorizeContent(input.trim())
-    setSuggestion(newSuggestion)
-    
-    // Load current content from the suggested page
-    const currentContent = localStorage.getItem(`kb2-${newSuggestion.category}-content`) || ''
-    setBeforeContent(currentContent)
-    setAfterContent(currentContent + '\n\n' + input.trim())
-    
-    setTimeout(() => {
+    try {
+      // Get current document state from localStorage
+      const storage = {
+        'competitor-analysis': localStorage.getItem('kb2-competitor-analysis-content') || '',
+        'customer-sentiment': localStorage.getItem('kb2-customer-sentiment-content') || '',
+        'market-trends': localStorage.getItem('kb2-market-trends-content') || '',
+        'product-intelligence': localStorage.getItem('kb2-product-intelligence-content') || ''
+      }
+      
+      // Call the real API using the proper service
+      const data = await api.suggestEdit(input.trim(), storage)
+      
+      if (data.error) {
+        console.error('API Error:', data.error)
+        // Fallback to mock data if API fails
+        setSuggestions([{
+          document: 'market-trends',
+          section: '## Recent Update',
+          action: 'add_after',
+          content: `\n\n## Recent Update\n${input.trim()}`,
+          confidence: 50,
+          reason: 'API unavailable - using fallback',
+          icon: 'TrendingUp',
+          color: 'text-green-600',
+          title: 'Market Trends',
+          before_content: localStorage.getItem('kb2-market-trends-content') || '# Market Trends',
+          after_content: (localStorage.getItem('kb2-market-trends-content') || '# Market Trends') + `\n\n## Recent Update\n${input.trim()}`
+        }])
+      } else {
+        setSuggestions(data.suggestions || [])
+      }
+      
       setIsProcessing(false)
-      setShowComparison(true)
-    }, 1500)
+      
+    } catch (error) {
+      console.error('Network error:', error)
+      // Fallback to mock data
+      setSuggestions([{
+        document: 'market-trends',
+        section: '## Recent Update', 
+        action: 'add_after',
+        content: `\n\n## Recent Update\n${input.trim()}`,
+        confidence: 50,
+        reason: 'Network error - using fallback',
+        icon: 'TrendingUp',
+        color: 'text-green-600',
+        title: 'Market Trends',
+        before_content: localStorage.getItem('kb2-market-trends-content') || '# Market Trends',
+        after_content: (localStorage.getItem('kb2-market-trends-content') || '# Market Trends') + `\n\n## Recent Update\n${input.trim()}`
+      }])
+      setIsProcessing(false)
+    }
+  }
+
+  const selectSuggestion = (suggestion: Suggestion) => {
+    setSelectedSuggestion(suggestion)
+    setShowComparison(true)
   }
 
   const acceptSuggestion = () => {
-    if (!suggestion) return
+    if (!selectedSuggestion) return
     
     // Save the updated content to localStorage
-    localStorage.setItem(`kb2-${suggestion.category}-content`, afterContent)
+    localStorage.setItem(`kb2-${selectedSuggestion.document}-content`, selectedSuggestion.after_content)
     
     // Reset form
     setInput('')
-    setSuggestion(null)
+    setSuggestions([])
+    setSelectedSuggestion(null)
     setShowComparison(false)
-    setBeforeContent('')
-    setAfterContent('')
   }
 
   const handleAfterCodeChange = (newCode: string) => {
-    setAfterContent(newCode)
+    if (selectedSuggestion) {
+      setSelectedSuggestion({
+        ...selectedSuggestion,
+        after_content: newCode
+      })
+    }
   }
 
   const rejectSuggestion = () => {
-    setSuggestion(null)
+    setSelectedSuggestion(null)
     setShowComparison(false)
-    setBeforeContent('')
-    setAfterContent('')
+  }
+
+  const rejectAllSuggestions = () => {
+    setSuggestions([])
+    setSelectedSuggestion(null)
+    setShowComparison(false)
     setIsProcessing(false)
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSubmit()
@@ -146,7 +177,7 @@ export default function KnowledgeBase2Page() {
                     <Textarea
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
-                      onKeyPress={handleKeyPress}
+                      onKeyDown={handleKeyDown}
                       placeholder="Enter your knowledge base update here...
 
 Examples:
@@ -186,50 +217,69 @@ Examples:
               </CardContent>
             </Card>
 
-            {/* Suggestion Card */}
-            {suggestion && !showComparison && (
-              <Card className="mb-8 border-2 border-blue-200 bg-blue-50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <suggestion.icon className={`h-5 w-5 ${suggestion.color}`} />
-                    Suggested Category: {suggestion.title}
-                    <Badge variant="secondary" className="ml-2">
-                      {suggestion.confidence}% confidence
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-700 mb-4">{suggestion.reason}</p>
-                  <div className="flex gap-2">
-                    <Button onClick={() => setShowComparison(true)} className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4" />
-                      Preview Changes
-                    </Button>
-                    <Button onClick={rejectSuggestion} variant="outline" className="flex items-center gap-2">
-                      <X className="h-4 w-4" />
-                      Reject
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Multiple Suggestions */}
+            {suggestions.length > 0 && !showComparison && (
+              <div className="mb-8 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Found {suggestions.length} suggestion{suggestions.length > 1 ? 's' : ''}
+                  </h3>
+                  <Button onClick={rejectAllSuggestions} variant="outline" size="sm">
+                    <X className="h-4 w-4 mr-1" />
+                    Dismiss All
+                  </Button>
+                </div>
+                
+                {suggestions.map((suggestion, index) => {
+                  const IconComponent = getIconComponent(suggestion.icon)
+                  return (
+                    <Card key={index} className="border-2 border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <IconComponent className={`h-5 w-5 ${suggestion.color}`} />
+                          Update {suggestion.title}
+                          <Badge variant="secondary" className="ml-2">
+                            {suggestion.confidence}% confidence
+                          </Badge>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-gray-700 mb-2">{suggestion.reason}</p>
+                        <p className="text-sm text-gray-600 mb-4">
+                          Will add to: <span className="font-mono text-blue-700">{suggestion.section}</span>
+                        </p>
+                        <div className="flex gap-2">
+                          <Button onClick={() => selectSuggestion(suggestion)} className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4" />
+                            Preview Changes
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
             )}
 
             {/* Code Comparison */}
-            {showComparison && suggestion && (
+            {showComparison && selectedSuggestion && (
               <Card className="mb-8">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <suggestion.icon className={`h-5 w-5 ${suggestion.color}`} />
-                    Preview: Adding to {suggestion.title}
+                    {(() => {
+                      const IconComponent = getIconComponent(selectedSuggestion.icon)
+                      return <IconComponent className={`h-5 w-5 ${selectedSuggestion.color}`} />
+                    })()}
+                    Preview: Adding to {selectedSuggestion.title}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="mb-4">
                     <CodeComparison
-                      beforeCode={beforeContent || '# No existing content'}
-                      afterCode={afterContent}
+                      beforeCode={selectedSuggestion.before_content || '# No existing content'}
+                      afterCode={selectedSuggestion.after_content}
                       language="markdown"
-                      filename={`${suggestion.category}.md`}
+                      filename={`${selectedSuggestion.document}.md`}
                       lightTheme="github-light"
                       darkTheme="github-dark"
                       editable={true}
@@ -239,7 +289,7 @@ Examples:
                   <div className="flex gap-2">
                     <Button onClick={acceptSuggestion} className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4" />
-                      Accept & Add to {suggestion.title}
+                      Accept & Add to {selectedSuggestion.title}
                     </Button>
                     <Button onClick={rejectSuggestion} variant="outline" className="flex items-center gap-2">
                       <X className="h-4 w-4" />

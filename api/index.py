@@ -1,6 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 import os
+from typing import List, Dict, Any
 
 app = FastAPI(
     title="RedditPro AI API",
@@ -9,7 +10,7 @@ app = FastAPI(
 )
 
 # Configure CORS for Next.js frontend
-allowed_origins = ["http://localhost:3000"]  # Local development
+allowed_origins = ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"]  # Local development
 
 # Add production domains if deployed
 if os.getenv("VERCEL_URL"):
@@ -59,3 +60,9 @@ async def monitor_status():
 @app.get("/analytics")
 async def get_analytics():
     return {"mentions": 0, "engagement": 0, "reach": 0}
+
+# Import routers
+from suggest_edit import router as suggest_edit_router
+
+# Include routers
+app.include_router(suggest_edit_router)

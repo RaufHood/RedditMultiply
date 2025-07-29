@@ -48,30 +48,32 @@ export function CodeComparison({
     }
   }, [highlightedBefore, highlightedAfter]);
 
-  // Generate diff highlighting with manual styling
+  // Generate diff highlighting with proper LCS-based diff algorithm
   const generateDiffCode = (before: string, after: string) => {
     const beforeLines = before.split('\n');
     const afterLines = after.split('\n');
     
-    // Simple diff logic
-    const maxLines = Math.max(beforeLines.length, afterLines.length);
+    // Compute Longest Common Subsequence for proper diff
+    const lcs = computeLCS(beforeLines, afterLines);
+    const diff = generateDiff(beforeLines, afterLines, lcs);
+    
     let beforeHtml = '<pre class="diff-container"><code>';
     let afterHtml = '<pre class="diff-container"><code>';
     
-    for (let i = 0; i < maxLines; i++) {
-      const beforeLine = beforeLines[i] || '';
-      const afterLine = afterLines[i] || '';
+    for (const operation of diff) {
+      const escapedLine = escapeHtml(operation.line);
       
-      if (beforeLine !== afterLine) {
-        if (beforeLine) {
-          beforeHtml += `<span class="diff-line removed" style="background-color: rgba(248, 113, 113, 0.2); display: block; padding: 2px 8px;">${beforeLine}</span>\n`;
-        }
-        if (afterLine) {
-          afterHtml += `<span class="diff-line added" style="background-color: rgba(34, 197, 94, 0.2); display: block; padding: 2px 8px;">${afterLine}</span>\n`;
-        }
-      } else {
-        beforeHtml += `<span class="diff-line unchanged" style="display: block; padding: 2px 8px;">${beforeLine}</span>\n`;
-        afterHtml += `<span class="diff-line unchanged" style="display: block; padding: 2px 8px;">${afterLine}</span>\n`;
+      switch (operation.type) {
+        case 'unchanged':
+          beforeHtml += `<span class="diff-line unchanged" style="display: block; padding: 2px 8px;">${escapedLine}</span>\n`;
+          afterHtml += `<span class="diff-line unchanged" style="display: block; padding: 2px 8px;">${escapedLine}</span>\n`;
+          break;
+        case 'deleted':
+          beforeHtml += `<span class="diff-line removed" style="background-color: rgba(248, 113, 113, 0.2); display: block; padding: 2px 8px;">${escapedLine}</span>\n`;
+          break;
+        case 'added':
+          afterHtml += `<span class="diff-line added" style="background-color: rgba(34, 197, 94, 0.2); display: block; padding: 2px 8px;">${escapedLine}</span>\n`;
+          break;
       }
     }
     
@@ -79,6 +81,55 @@ export function CodeComparison({
     afterHtml += '</code></pre>';
     
     return { beforeDiff: beforeHtml, afterDiff: afterHtml };
+  };
+
+  // Compute Longest Common Subsequence
+  const computeLCS = (a: string[], b: string[]): number[][] => {
+    const m = a.length;
+    const n = b.length;
+    const dp: number[][] = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+    
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        if (a[i - 1] === b[j - 1]) {
+          dp[i][j] = dp[i - 1][j - 1] + 1;
+        } else {
+          dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+        }
+      }
+    }
+    
+    return dp;
+  };
+
+  // Generate diff operations based on LCS
+  const generateDiff = (a: string[], b: string[], lcs: number[][]): Array<{type: 'unchanged' | 'deleted' | 'added', line: string}> => {
+    const result: Array<{type: 'unchanged' | 'deleted' | 'added', line: string}> = [];
+    let i = a.length;
+    let j = b.length;
+    
+    while (i > 0 || j > 0) {
+      if (i > 0 && j > 0 && a[i - 1] === b[j - 1]) {
+        result.unshift({ type: 'unchanged', line: a[i - 1] });
+        i--;
+        j--;
+      } else if (j > 0 && (i === 0 || lcs[i][j - 1] >= lcs[i - 1][j])) {
+        result.unshift({ type: 'added', line: b[j - 1] });
+        j--;
+      } else if (i > 0) {
+        result.unshift({ type: 'deleted', line: a[i - 1] });
+        i--;
+      }
+    }
+    
+    return result;
+  };
+
+  // Escape HTML characters
+  const escapeHtml = (text: string): string => {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   };
 
   useEffect(() => {

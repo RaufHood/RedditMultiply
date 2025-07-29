@@ -241,6 +241,17 @@ export const api = {
     const response = await fetch(`${API_BASE_URL}/analytics/`)
     if (!response.ok) throw new Error('Failed to fetch analytics')
     return response.json()
+  },
+
+  // Suggest Edit
+  async suggestEdit(input: string, storage?: Record<string, string>): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/suggest-edit/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input, storage })
+    })
+    if (!response.ok) throw new Error('Failed to get edit suggestions')
+    return response.json()
   }
 }
 
