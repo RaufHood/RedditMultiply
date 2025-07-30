@@ -1,6 +1,6 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || (
   typeof window !== 'undefined' && window.location.hostname !== 'localhost'
-    ? '/api'  // Production: use relative API path
+    ? 'https://backend-ecru-beta.vercel.app'  // Production: use full backend URL
     : 'http://localhost:8000'  // Development: use local backend
 )
 

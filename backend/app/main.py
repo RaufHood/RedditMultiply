@@ -17,6 +17,9 @@ allowed_origins = [
     "http://localhost:3000",  # Local development
     "http://localhost:3001",  # Current frontend port
     "http://localhost:3002",  # Alternative port
+    "https://reddit-frontend-qnvv7u984-raufhoods-projects.vercel.app",  # Production frontend
+    "https://*.vercel.app",  # All Vercel deployments
+    "https://reddit-frontend-theta.vercel.app"
 ]
 
 # Add production domains if deployed
