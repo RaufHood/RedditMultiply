@@ -14,8 +14,8 @@ const nextConfig = {
     if (process.env.NODE_ENV === 'development') {
       return [
         {
-          source: '/api/:path*',
-          destination: 'http://127.0.0.1:8000/:path*',
+          source: '/api/((?!docs).*)',  // Exclude /api/docs/* from proxy
+          destination: 'http://127.0.0.1:8000/$1',
         },
       ]
     }

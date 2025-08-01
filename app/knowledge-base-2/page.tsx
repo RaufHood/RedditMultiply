@@ -8,10 +8,11 @@ import { Badge } from "@/components/ui/badge"
 import { Navigation } from "@/components/navigation"
 import { Brain, Sparkles, ArrowUp, Loader2, Target, Heart, TrendingUp, Search, CheckCircle, X } from "lucide-react"
 import { CodeComparison } from "@/components/magicui/code-comparison"
+import { DocBrowser } from "@/components/doc-browser"
 import { api } from "@/lib/api"
 
 interface Suggestion {
-  document: 'competitor-analysis' | 'customer-sentiment' | 'market-trends' | 'product-intelligence'
+  document: string  // Now accepts any document path
   section: string
   action: 'add_after' | 'replace'
   content: string
@@ -22,6 +23,7 @@ interface Suggestion {
   title: string
   before_content: string
   after_content: string
+  file_path?: string  // Full path to the file
 }
 
 export default function KnowledgeBase2Page() {
@@ -47,32 +49,44 @@ export default function KnowledgeBase2Page() {
     setIsProcessing(true)
     
     try {
-      // Get current document state from localStorage
-      const storage = {
-        'competitor-analysis': localStorage.getItem('kb2-competitor-analysis-content') || '',
-        'customer-sentiment': localStorage.getItem('kb2-customer-sentiment-content') || '',
-        'market-trends': localStorage.getItem('kb2-market-trends-content') || '',
-        'product-intelligence': localStorage.getItem('kb2-product-intelligence-content') || ''
+      // Get current document state from localStorage (for any edited documents)
+      const storage: Record<string, string> = {}
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key?.startsWith('kb2-doc-')) {
+          storage[key] = localStorage.getItem(key) || ''
+        }
       }
       
-      // Call the real API using the proper service
-      const data = await api.suggestEdit(input.trim(), storage)
+      // Call the smart LLM-powered document suggestion API
+      const response = await fetch('/api/docs/suggest-smart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: input.trim(), storage })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to get suggestions')
+      }
+      
+      const data = await response.json()
       
       if (data.error) {
         console.error('API Error:', data.error)
-        // Fallback to mock data if API fails
+        // Fallback to a simple suggestion
         setSuggestions([{
-          document: 'market-trends',
-          section: '## Recent Update',
+          document: 'index',
+          section: '## Updates',
           action: 'add_after',
-          content: `\n\n## Recent Update\n${input.trim()}`,
-          confidence: 50,
+          content: `\n\n## Update: ${new Date().toLocaleDateString()}\n\n${input.trim()}`,
+          confidence: 30,
           reason: 'API unavailable - using fallback',
-          icon: 'TrendingUp',
-          color: 'text-green-600',
-          title: 'Market Trends',
-          before_content: localStorage.getItem('kb2-market-trends-content') || '# Market Trends',
-          after_content: (localStorage.getItem('kb2-market-trends-content') || '# Market Trends') + `\n\n## Recent Update\n${input.trim()}`
+          icon: 'FileText',
+          color: 'text-blue-600',
+          title: 'Documentation',
+          before_content: '# Documentation\n\nMain documentation page.',
+          after_content: `# Documentation\n\nMain documentation page.\n\n## Update: ${new Date().toLocaleDateString()}\n\n${input.trim()}`,
+          file_path: 'index'
         }])
       } else {
         setSuggestions(data.suggestions || [])
@@ -82,19 +96,20 @@ export default function KnowledgeBase2Page() {
       
     } catch (error) {
       console.error('Network error:', error)
-      // Fallback to mock data
+      // Fallback to simple suggestion
       setSuggestions([{
-        document: 'market-trends',
-        section: '## Recent Update', 
+        document: 'index',
+        section: '## Updates',
         action: 'add_after',
-        content: `\n\n## Recent Update\n${input.trim()}`,
-        confidence: 50,
+        content: `\n\n## Update: ${new Date().toLocaleDateString()}\n\n${input.trim()}`,
+        confidence: 30,
         reason: 'Network error - using fallback',
-        icon: 'TrendingUp',
-        color: 'text-green-600',
-        title: 'Market Trends',
-        before_content: localStorage.getItem('kb2-market-trends-content') || '# Market Trends',
-        after_content: (localStorage.getItem('kb2-market-trends-content') || '# Market Trends') + `\n\n## Recent Update\n${input.trim()}`
+        icon: 'FileText',
+        color: 'text-blue-600',
+        title: 'Documentation',
+        before_content: '# Documentation\n\nMain documentation page.',
+        after_content: `# Documentation\n\nMain documentation page.\n\n## Update: ${new Date().toLocaleDateString()}\n\n${input.trim()}`,
+        file_path: 'index'
       }])
       setIsProcessing(false)
     }
@@ -108,8 +123,14 @@ export default function KnowledgeBase2Page() {
   const acceptSuggestion = () => {
     if (!selectedSuggestion) return
     
-    // Save the updated content to localStorage
-    localStorage.setItem(`kb2-${selectedSuggestion.document}-content`, selectedSuggestion.after_content)
+    // Save the updated content to localStorage using the file path
+    const storageKey = `kb2-doc-${selectedSuggestion.file_path?.replace(/[^a-zA-Z0-9]/g, '-') || selectedSuggestion.document.replace(/[^a-zA-Z0-9]/g, '-')}`
+    const documentData = {
+      title: selectedSuggestion.title,
+      content: selectedSuggestion.after_content,
+      filePath: selectedSuggestion.file_path || selectedSuggestion.document
+    }
+    localStorage.setItem(storageKey, JSON.stringify(documentData))
     
     // Reset form
     setInput('')
@@ -245,8 +266,18 @@ Examples:
                       </CardHeader>
                       <CardContent>
                         <p className="text-gray-700 mb-2">{suggestion.reason}</p>
-                        <p className="text-sm text-gray-600 mb-4">
+                        <p className="text-sm text-gray-600 mb-2">
                           Will add to: <span className="font-mono text-blue-700">{suggestion.section}</span>
+                        </p>
+                        <p className="text-xs text-gray-500 mb-4">
+                          Document: <a 
+                            href={`/knowledge-base-2/docs/${suggestion.file_path || suggestion.document}`} 
+                            className="text-blue-600 hover:underline"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {suggestion.file_path || suggestion.document}
+                          </a>
                         </p>
                         <div className="flex gap-2">
                           <Button onClick={() => selectSuggestion(suggestion)} className="flex items-center gap-2">
@@ -298,6 +329,13 @@ Examples:
                   </div>
                 </CardContent>
               </Card>
+            )}
+
+            {/* Documentation Browser */}
+            {!showComparison && suggestions.length === 0 && (
+              <div className="mb-8">
+                <DocBrowser />
+              </div>
             )}
             
           </div>
