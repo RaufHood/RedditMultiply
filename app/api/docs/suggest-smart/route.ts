@@ -65,7 +65,7 @@ const MAIN_DOCS = [
   { path: 'voice/tracing', title: 'Voice Tracing', description: 'Debugging and monitoring voice interactions' },
 ]
 
-function loadMainDocuments(): DocFile[] {
+function loadMainDocuments(storage?: Record<string, string>): DocFile[] {
   const docsDir = path.join(process.cwd(), 'app/knowledge-base-2/docs')
   const documents: DocFile[] = []
   
@@ -73,7 +73,21 @@ function loadMainDocuments(): DocFile[] {
     try {
       const filePath = path.join(docsDir, `${doc.path}.md`)
       if (fs.existsSync(filePath)) {
-        const content = fs.readFileSync(filePath, 'utf-8')
+        let content = fs.readFileSync(filePath, 'utf-8')
+        
+        // Check if there's a localStorage override for this document
+        if (storage) {
+          const storageKey = `kb2-doc-${doc.path.replace(/[^a-zA-Z0-9]/g, '-')}`
+          if (storage[storageKey]) {
+            try {
+              const storedDoc = JSON.parse(storage[storageKey])
+              content = storedDoc.content || content
+            } catch (err) {
+              console.error(`Error parsing stored document ${doc.path}:`, err)
+            }
+          }
+        }
+        
         documents.push({
           name: path.basename(doc.path) + '.md',
           path: doc.path,
@@ -188,7 +202,7 @@ function simpleKeywordScore(userInput: string, doc: DocFile): number {
   return score
 }
 
-async function analyzeDocumentWithLLM(userInput: string, doc: DocFile): Promise<Suggestion | null> {
+async function analyzeDocumentWithLLM(userInput: string, doc: DocFile, llmScore?: number): Promise<Suggestion | null> {
   try {
     // Use OpenAI to intelligently analyze the document
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -281,6 +295,7 @@ Analyze relevance and suggest intelligent updates.`
     let analysis
     try {
       analysis = JSON.parse(jsonContent)
+      console.log('✅ Successfully parsed JSON analysis')
     } catch (parseError) {
       console.error('Failed to parse OpenAI response as JSON:', {
         original: content,
@@ -291,7 +306,14 @@ Analyze relevance and suggest intelligent updates.`
       return null
     }
     
+    console.log('LLM Analysis result:', {
+      relevant: analysis.relevant,
+      confidence: analysis.confidence,
+      hasNewContent: !!analysis.new_content
+    })
+    
     if (!analysis.relevant || analysis.confidence < 30) {
+      console.log('❌ Analysis rejected: not relevant or low confidence')
       return null
     }
 
@@ -334,7 +356,7 @@ Analyze relevance and suggest intelligent updates.`
       section: targetSection,
       action: analysis.action || 'add_after',
       content: userInput.trim(),
-      confidence: Math.min(analysis.confidence, 90),
+      confidence: llmScore || Math.min(analysis.confidence, 90),
       reason: analysis.reasoning || `Relevant to ${doc.title}`,
       icon,
       color,
@@ -364,29 +386,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 })
     }
     
-    // Load main documents only
-    const documents = loadMainDocuments()
+    // Load main documents with localStorage overrides
+    const documents = loadMainDocuments(storage)
     
     if (documents.length === 0) {
       return NextResponse.json({ error: 'No documentation files found' }, { status: 404 })
     }
     
-    // Update document contents with user's current edits from storage
-    if (storage) {
-      for (const doc of documents) {
-        const storageKey = `kb2-doc-${doc.path.replace(/[^a-zA-Z0-9]/g, '-')}`
-        if (storage[storageKey]) {
-          try {
-            const storedDoc = JSON.parse(storage[storageKey])
-            if (storedDoc.content) {
-              doc.content = storedDoc.content
-            }
-          } catch (err) {
-            // Ignore parsing errors
-          }
-        }
-      }
-    }
     
     console.log('Loaded documents:', documents.map(d => d.path))
     
@@ -401,15 +407,21 @@ export async function POST(request: NextRequest) {
     // STEP 2: Generate suggestions for top candidates
     const suggestions: Suggestion[] = []
     
-    for (const { doc } of topCandidates) {
-      const suggestion = await analyzeDocumentWithLLM(input.trim(), doc)
+    for (const { doc, score } of topCandidates) {
+      console.log(`Analyzing ${doc.path} with score ${score}`)
+      const suggestion = await analyzeDocumentWithLLM(input.trim(), doc, score)
       if (suggestion) {
+        console.log(`✅ Got suggestion for ${doc.path}`)
         suggestions.push(suggestion)
+      } else {
+        console.log(`❌ No suggestion for ${doc.path}`)
       }
     }
     
     // Sort by confidence
     suggestions.sort((a, b) => b.confidence - a.confidence)
+    
+    console.log(`Final suggestions count: ${suggestions.length}`)
     
     return NextResponse.json({
       success: true,

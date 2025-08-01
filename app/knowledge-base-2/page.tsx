@@ -123,14 +123,16 @@ export default function KnowledgeBase2Page() {
   const acceptSuggestion = () => {
     if (!selectedSuggestion) return
     
-    // Save the updated content to localStorage using the file path
-    const storageKey = `kb2-doc-${selectedSuggestion.file_path?.replace(/[^a-zA-Z0-9]/g, '-') || selectedSuggestion.document.replace(/[^a-zA-Z0-9]/g, '-')}`
+    // FIXED: Use consistent storage key format with .md extension
+    const filePath = (selectedSuggestion.file_path || selectedSuggestion.document) + '.md'
+    const storageKey = `kb2-doc-${filePath.replace(/[^a-zA-Z0-9]/g, '-')}`
     const documentData = {
       title: selectedSuggestion.title,
       content: selectedSuggestion.after_content,
-      filePath: selectedSuggestion.file_path || selectedSuggestion.document
+      filePath: filePath
     }
     localStorage.setItem(storageKey, JSON.stringify(documentData))
+    console.log('✅ Suggestion accepted and saved to:', storageKey)
     
     // Reset form
     setInput('')

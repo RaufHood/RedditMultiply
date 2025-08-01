@@ -43,7 +43,19 @@ export default function DynamicDocPage() {
           throw new Error(`Failed to load document: ${response.statusText}`)
         }
         
-        const content = await response.text()
+        let content = await response.text()
+        
+        // Check if there's a localStorage override for this document
+        const storageKey = `kb2-doc-${filePath.replace(/[^a-zA-Z0-9]/g, '-')}`
+        const storedDoc = localStorage.getItem(storageKey)
+        if (storedDoc) {
+          try {
+            const parsedDoc = JSON.parse(storedDoc)
+            content = parsedDoc.content || content
+          } catch (err) {
+            console.error('Error parsing stored document:', err)
+          }
+        }
         
         // Extract title from first line if it's a heading, otherwise use filename
         const lines = content.split('\n')
