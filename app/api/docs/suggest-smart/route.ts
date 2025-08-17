@@ -112,6 +112,8 @@ async function scoreDocumentsWithLLM(userInput: string, docs: DocFile[]): Promis
       return `${doc.path}: ${doc.title} - ${description}`
     }).join('\n')
 
+
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -144,6 +146,9 @@ Return ONLY a JSON object with document paths as keys and scores as values:
 
     const data = await response.json()
     const content = data.choices[0]?.message?.content
+
+    // Log only the first LLM call output
+    console.log('🤖 FIRST LLM CALL OUTPUT:', content)
 
     if (!content) {
       throw new Error('No response from OpenAI')
@@ -204,6 +209,8 @@ function simpleKeywordScore(userInput: string, doc: DocFile): number {
 
 async function analyzeDocumentWithLLM(userInput: string, doc: DocFile, llmScore?: number): Promise<Suggestion | null> {
   try {
+
+
     // Use OpenAI to intelligently analyze the document
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -260,6 +267,8 @@ Analyze relevance and suggest intelligent updates.`
 
     const data = await response.json()
     const content = data.choices[0]?.message?.content
+
+
 
     if (!content) {
       throw new Error('No response from OpenAI')

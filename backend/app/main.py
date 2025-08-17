@@ -1,10 +1,29 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
+import logging
 from dotenv import load_dotenv
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler('app.log')
+    ]
+)
+
+# Ensure our loggers are at INFO level
+logging.getLogger('app.services.ai_service').setLevel(logging.INFO)
+logging.getLogger('app.api.suggest_edit').setLevel(logging.INFO)
 
 # Load environment variables
 load_dotenv()
+
+# Test logging
+logger = logging.getLogger(__name__)
+logger.info("🚀 Starting RedditPro AI API server...")
 
 app = FastAPI(
     title="RedditPro AI API",
@@ -61,6 +80,48 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "RedditPro AI API"}
+
+@app.get("/test-llm")
+async def test_llm():
+    """Test endpoint to trigger an LLM call and see logging"""
+    from app.services.ai_service import ai_service
+    
+    try:
+        # Test a simple sentiment analysis
+        sentiment, confidence = await ai_service.detect_sentiment("This is a great product!")
+        return {
+            "message": "LLM test completed",
+            "sentiment": sentiment,
+            "confidence": confidence,
+            "check_logs": "Look at the console/logs for LLM call details"
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.post("/test-suggest-edit")
+async def test_suggest_edit():
+    """Test endpoint to trigger suggest-edit functionality and see logging"""
+    from app.services.ai_service import ai_service
+    
+    logger.info("🧪 Testing suggest-edit functionality...")
+    
+    try:
+        # Test document analysis
+        test_docs = {
+            "competitor-analysis": "# Competitor Analysis\n\n## Direct Competitors\n- Add your insights here",
+            "customer-sentiment": "# Customer Sentiment Analysis\n\n## Overall Sentiment Trends\n- Add your insights here"
+        }
+        
+        result = await ai_service.analyze_document_update("Our main competitor launched a new pricing strategy", test_docs)
+        
+        return {
+            "message": "Suggest-edit test completed",
+            "result": result,
+            "check_logs": "Look at the console/logs for detailed LLM call information"
+        }
+    except Exception as e:
+        logger.error(f"Test suggest-edit failed: {e}")
+        return {"error": str(e)}
 
 if __name__ == "__main__":
     import uvicorn

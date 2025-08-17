@@ -1,8 +1,12 @@
 import os
+import logging
 from openai import OpenAI
 from typing import Dict, List, Optional, Tuple
 import json
 import asyncio
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 class AIService:
     def __init__(self):
@@ -10,6 +14,7 @@ class AIService:
             api_key=os.getenv("OPENAI_API_KEY")
         )
         self.model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        self.call_count = 0  # Track LLM call count
     
     async def analyze_thread_with_sentiment(self, post_data: Dict, comments: List[Dict]) -> Dict:
         """
@@ -58,7 +63,7 @@ Return your analysis in the following JSON format:
                 }
         
         except Exception as e:
-            print(f"Error in AI analysis: {e}")
+            logger.error(f"Error in AI analysis: {e}")
             return self._fallback_analysis(post_data)
     
     async def detect_sentiment(self, text: str) -> Tuple[str, float]:
@@ -82,7 +87,7 @@ Return your analysis in the following JSON format:
             return result.get("sentiment", "neutral"), result.get("confidence", 0.5)
             
         except Exception as e:
-            print(f"Error in sentiment detection: {e}")
+            logger.error(f"Error in sentiment detection: {e}")
             # Fallback to simple keyword-based sentiment
             return self._simple_sentiment_fallback(text), 0.3
     
@@ -153,7 +158,7 @@ Generate a draft reply in JSON format:
                 }
         
         except Exception as e:
-            print(f"Error generating reply draft: {e}")
+            logger.error(f"Error generating reply draft: {e}")
             return {
                 "draft_text": "Thanks for sharing this! This is an interesting discussion.",
                 "reasoning": "Fallback response due to AI service error",
@@ -182,7 +187,7 @@ Generate a draft reply in JSON format:
             return {"suggestions": suggestions[:2]}  # Return top 2 suggestions
             
         except Exception as e:
-            print(f"Error in document analysis: {e}")
+            logger.error(f"Error in document analysis: {e}")
             return {"error": f"Document analysis failed: {str(e)}"}
     
     async def _analyze_single_document(self, user_input: str, doc_name: str, current_content: str) -> Optional[Dict]:
@@ -286,11 +291,17 @@ If not relevant, respond: {{"relevant": false, "confidence": 0}}"""
                 return None
                 
         except Exception as e:
-            print(f"Error analyzing document {doc_name}: {e}")
+            logger.error(f"Error analyzing document {doc_name}: {e}")
             return None
     
     async def _call_openai_async(self, system_prompt: str, user_prompt: str) -> str:
         """Make async OpenAI API call"""
+        import traceback
+        
+        # Get the calling method name for context
+        caller_frame = traceback.extract_stack()[-2]
+        calling_method = caller_frame.name
+        
         loop = asyncio.get_event_loop()
         
         def _call_sync():
@@ -305,7 +316,21 @@ If not relevant, respond: {{"relevant": false, "confidence": 0}}"""
             )
             return response.choices[0].message.content
         
-        return await loop.run_in_executor(None, _call_sync)
+        result = await loop.run_in_executor(None, _call_sync)
+        
+        # Increment call count
+        self.call_count += 1
+        
+        # Log the LLM call response
+        logger.info(f"🤖 LLM CALL #{self.call_count} (from {calling_method}):")
+        logger.info(f"Model: {self.model}")
+        logger.info(f"System Prompt: {system_prompt[:200]}...")
+        logger.info(f"User Prompt: {user_prompt[:200]}...")
+        logger.info(f"Response: {result}")
+        logger.info(f"Response Length: {len(result)} characters")
+        logger.info("=" * 80)
+        
+        return result
     
     def _prepare_thread_content(self, post_data: Dict, comments: List[Dict]) -> str:
         """Prepare thread content for analysis"""

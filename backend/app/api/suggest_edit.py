@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Request
 from typing import List, Dict, Any
+import logging
 from ..services.ai_service import ai_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/suggest-edit", tags=["suggest-edit"])
 
@@ -49,6 +52,10 @@ async def suggest_edit(request: Request):
         user_input = body.get("input", "")
         storage_content = body.get("storage", {})  # Frontend can pass current document state
         
+        logger.info(f"📝 SUGGEST EDIT REQUEST:")
+        logger.info(f"User Input: {user_input}")
+        logger.info(f"Storage Content Keys: {list(storage_content.keys()) if storage_content else 'None'}")
+        
         if not user_input.strip():
             return {"error": "No input provided"}
         
@@ -62,14 +69,19 @@ async def suggest_edit(request: Request):
         
         # Use LLM-based intelligent document analysis
         try:
+            logger.info("🧠 Starting LLM-based document analysis...")
             result = await ai_service.analyze_document_update(user_input, docs)
+            logger.info(f"🧠 LLM analysis result: {result}")
+            
             if "error" in result:
+                logger.warning("🧠 LLM returned error, falling back to keyword matching")
                 # Fallback to simple approach if LLM fails
                 suggestions = analyze_input_and_suggest_edits_fallback(user_input, docs)
             else:
                 suggestions = result.get("suggestions", [])
+                logger.info(f"🧠 LLM found {len(suggestions)} suggestions")
         except Exception as e:
-            print(f"LLM analysis failed: {e}")
+            logger.error(f"LLM analysis failed: {e}")
             # Fallback to simple approach
             suggestions = analyze_input_and_suggest_edits_fallback(user_input, docs)
         
